@@ -1,1656 +1,438 @@
+
 <!DOCTYPE html>
-<html lang="ko" class="h-full">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>숲속 정령 전자결재 (지브리 스타일)</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Gaegu & Noto Sans KR -->
+    <title>숲속 정령 전자결재 시스템</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --forest-green: #4A7C59;
+            --forest-dark: #2F4F38;
+            --sage-green: #8AAB90;
+            --cream-bg: #FDFBF7;
+            --card-bg: #FFFFFF;
+            --text-main: #2C3531;
+            --text-sub: #6B7A72;
+            --terracotta: #D97D62;
+            --accent-yellow: #E9C46A;
+            --border-color: #E2ECE3;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+        body { background-color: #2F3E46; color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
+        
+        /* 모바일 프레임 */
+        .mobile-frame {
+            width: 100%; max-width: 440px; height: 90vh; max-height: 880px;
+            background-color: var(--cream-bg); border-radius: 36px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 10px #1A252C;
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        /* 로그인 오버레이 모달 (버튼 클릭 시 정상 작동) */
+        .login-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 37, 44, 0.75); backdrop-filter: blur(6px);
+            display: flex; justify-content: center; align-items: center; padding: 20px; z-index: 999;
+        }
+        .login-overlay.hidden { display: none !important; }
+        .login-card {
+            background: var(--cream-bg); width: 100%; max-width: 340px; border-radius: 28px;
+            padding: 32px 24px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 2px solid var(--border-color);
+        }
+        .login-icon {
+            width: 56px; height: 56px; background: var(--forest-green); border-radius: 18px;
+            margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px;
+        }
+        .login-card h2 { font-family: 'Gaegu', cursive; font-size: 26px; color: var(--forest-dark); margin-bottom: 6px; }
+        .login-card p { font-size: 11px; color: var(--text-sub); margin-bottom: 24px; }
+        .login-btn {
+            width: 100%; padding: 13px; border-radius: 14px; border: none; font-size: 13px;
+            font-weight: bold; cursor: pointer; margin-bottom: 10px; display: flex;
+            align-items: center; justify-content: center; gap: 8px; transition: 0.2s;
+        }
+        .login-btn:active { transform: scale(0.98); }
+        .btn-yellow { background: #FEE500; color: #191919; }
+        .btn-naver { background: #03C75A; color: #FFFFFF; }
+        .btn-guest { background: var(--forest-green); color: #FFFFFF; }
+        .login-footer { font-size: 10px; color: var(--text-sub); margin-top: 14px; }
+
+        /* 상단 브라우저 바 */
+        .browser-bar {
+            background-color: #1A252C; padding: 8px 14px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A0B2A6; flex-shrink: 0;
+        }
+        .browser-url {
+            flex: 1; background: #2F3E46; padding: 5px 12px; border-radius: 14px; color: #FFF; display: flex; align-items: center; gap: 6px;
+        }
+        .browser-url input { background: transparent; border: none; color: #FFF; width: 100%; outline: none; font-size: 11px; }
+        .share-btn { background: #3B7A57; color: #FFF; border: none; padding: 5px 10px; border-radius: 10px; cursor: pointer; font-size: 11px; white-space: nowrap; font-weight: 500; }
+
+        /* 앱 헤더 */
+        .app-header {
+            background-color: var(--card-bg); padding: 12px 16px; border-bottom: 2px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .logo-icon { width: 36px; height: 36px; background: var(--forest-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #FFF; }
+        .logo-text h1 { font-family: 'Gaegu', cursive; font-size: 20px; color: var(--forest-dark); line-height: 1.1; }
+        .logo-text p { font-size: 10px; color: var(--text-sub); }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .user-avatar { width: 34px; height: 34px; background: var(--accent-yellow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative; }
+        .alarm-badge { position: absolute; top: -2px; right: -2px; background: var(--terracotta); color: #FFF; font-size: 9px; width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .user-info { text-align: right; }
+        .user-info .name { font-size: 12px; font-weight: bold; color: var(--forest-dark); }
+        .weather-badge { font-size: 10px; background: #F4F7F4; padding: 2px 6px; border-radius: 10px; color: var(--forest-green); border: 1px solid var(--border-color); display: inline-block; margin-top: 1px; }
+
+        /* 메인 본문 */
+        .app-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; background-color: var(--cream-bg); }
+        .screen-view { display: none; flex-direction: column; gap: 16px; }
+        .screen-view.active { display: flex; }
+
+        .welcome-banner {
+            background: linear-gradient(135deg, #E2ECE3 0%, #D4E2D5 100%);
+            border-radius: 20px; padding: 18px; border: 1px solid #C4D7C5;
+        }
+        .welcome-banner h2 { font-family: 'Gaegu', cursive; font-size: 22px; color: var(--forest-dark); margin-bottom: 4px; }
+        .welcome-banner p { font-size: 11px; color: var(--text-sub); line-height: 1.4; margin-bottom: 12px; }
+        .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .action-chip { background: #FFF; border: 1px solid #B0C4B1; padding: 6px 12px; border-radius: 14px; font-size: 11px; font-weight: 500; color: var(--forest-dark); cursor: pointer; transition: 0.2s; }
+        .action-chip:hover { background: var(--forest-green); color: #FFF; }
+
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .status-card {
+            background: var(--card-bg); border-radius: 18px; padding: 16px; box-shadow: 0 4px 12px rgba(74, 124, 89, 0.06);
+            border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;
+        }
+        .status-card-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-sub); font-weight: 500; }
+        .status-card-body { margin: 12px 0 4px 0; display: flex; justify-content: space-between; align-items: flex-end; }
+        .status-card-body .count { font-family: 'Gaegu', cursive; font-size: 28px; color: var(--forest-dark); line-height: 1; }
+        .status-tag { font-size: 9px; padding: 3px 8px; border-radius: 8px; font-weight: 500; }
+        .tag-need { background: #FDF2E9; color: #D97D62; }
+        .tag-prog { background: #EBF3F9; color: #3A7CA5; }
+        .tag-done { background: #EAF4EE; color: #4A7C59; }
+
+        .section-box { background: var(--card-bg); border-radius: 18px; padding: 16px; border: 1px solid var(--border-color); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .section-header h3 { font-size: 13px; font-weight: bold; color: var(--forest-dark); }
+        .more-btn { font-size: 11px; color: var(--sage-green); cursor: pointer; font-weight: 500; }
+        
+        .doc-item {
+            padding: 10px 12px; border-radius: 12px; background: #FAFCFA; border: 1px solid #EAF0EB;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer;
+        }
+        .doc-item:last-child { margin-bottom: 0; }
+        .doc-title { font-size: 12px; font-weight: bold; color: var(--text-main); margin-bottom: 2px; }
+        .doc-sub { font-size: 10px; color: var(--text-sub); }
+
+        .btn-primary { background: var(--forest-green); color: #FFF; border: none; padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 11px; font-weight: bold; color: var(--forest-dark); margin-bottom: 4px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 11px; outline: none; background: #FAFCFA; }
+
+        .bottom-nav { background: var(--card-bg); padding: 10px 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
+        .nav-item { font-size: 11px; color: var(--text-sub); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-item.active { color: var(--forest-green); font-weight: bold; }
+
+        .toast {
+            position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #2F4F38; color: #FFF; padding: 10px 20px; border-radius: 20px; font-size: 12px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2); transition: 0.3s; z-index: 1000; pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-frame">
+        <!-- 초기 입장 모달 (버튼 클릭 시 즉시 닫히고 본 화면 진입) -->
+        <div id="loginModal" class="login-overlay">
+            <div class="login-card">
+                <div class="login-icon">🌳</div>
+                <h2>숲속 정령 전자결재</h2>
+                <p>별도 회원가입 없이 팀 톡방 링크로 즉시 접속하세요.</p>
+                <button class="login-btn btn-yellow" onclick="enterApp('톡방 빠른 입장')">💬 톡방 링크로 즉시 접속</button>
+                <button class="login-btn btn-naver" onclick="enterApp('네이버 톡방 입장')">N 네이버 톡방 / 웨일로 즉시 접속</button>
+                <button class="login-btn btn-guest" onclick="enterApp('게스트 정령')">🌱 계정 없이 게스트(정령)로 바로 입장</button>
+                <div class="login-footer">💡 단톡방 공유 링크를 통해 로그인 없이 원클릭 접속이 가능합니다.</div>
+            </div>
+        </div>
+
+        <!-- 상단 브라우저 바 -->
+        <div class="browser-bar">
+            <span style="color:#8AAB90;">🌱</span>
+            <div class="browser-url">
+                <span>🔒</span>
+                <input type="text" id="urlInput" value="https://joungmyeon.github.io/-/" readonly>
+            </div>
+            <button class="share-btn" onclick="copyShareLink()">톡방 링크복사</button>
+        </div>
+
+        <!-- 앱 헤더 -->
+        <div class="app-header">
+            <div class="logo-area" onclick="switchScreen('home')">
+                <div class="logo-icon">🌱</div>
+                <div class="logo-text">
+                    <h1>숲속 정령 전자결재</h1>
+                    <p>초록빛 평화로운 사내 포털</p>
+                </div>
+            </div>
+            <div class="user-profile" onclick="openLocationModal()">
+                <div class="user-avatar">
+                    🦊
+                    <div class="alarm-badge">2</div>
+                </div>
+                <div class="user-info">
+                    <div class="name">정면</div>
+                    <div class="weather-badge" id="currentWeatherBadge">☀️ 맑음 14°C · 아산시</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <div class="app-body">
+            <!-- [1] 홈 화면 -->
+            <div id="screen-home" class="screen-view active">
+                <div class="welcome-banner">
+                    <h2>안녕하세요, 정면님! 🍃</h2>
+                    <p>오늘 바람결에 실려 온 결재 대기 도토리가 <strong style="color:var(--forest-dark);">2건</strong>, 읽지 않은 알림이 <strong style="color:var(--forest-dark);">2건</strong> 있습니다.</p>
+                    <div class="quick-actions">
+                        <div class="action-chip" onclick="switchScreen('waiting')">🌰 결재 대기 보기</div>
+                        <div class="action-chip" onclick="switchScreen('draft')">✨ 새 기안 작성</div>
+                        <div class="action-chip" onclick="switchScreen('alarm')">🔔 알림함 확인</div>
+                    </div>
+                </div>
+
+                <div class="status-grid">
+                    <div class="status-card" onclick="switchScreen('waiting')">
+                        <div class="status-card-header"><span>결재 대기</span><span>⏳</span></div>
+                        <div class="status-card-body">
+                            <span class="count">2</span>
+                            <span class="status-tag tag-need">처리 필요</span>
+                        </div>
+                    </div>
+                    <div class="status-card" onclick="switchScreen('progress')">
+                        <div class="status-card-header"><span>진행 중 기안</span><span>⛵</span></div>
+                        <div class="status-card-body">
+                            <span class="count">1</span>
+                            <span class="status-tag tag-prog">상신됨</span>
+                        </div>
+                    </div>
+                    <div class="status-card" onclick="switchScreen('approval')">
+                        <div class="status-card-header"><span>결재함</span><span>🌻</span></div>
+                        <div class="status-card-body">
+                            <span class="count">1</span>
+                            <span class="status-tag tag-done">승인 보관</span>
+                        </div>
+                    </div>
+                    <div class="status-card" onclick="switchScreen('rejected')">
+                        <div class="status-card-header"><span>반려함</span><span>🍂</span></div>
+                        <div class="status-card-body">
+                            <span class="count">1</span>
+                            <span class="status-tag tag-need">보완·재기안</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <div class="section-header">
+                        <h3>📜 최근 도착한 결재 대기 문서</h3>
+                        <span class="more-btn" onclick="switchScreen('waiting')">전체보기 →</span>
+                    </div>
+                    <div class="doc-item" onclick="switchScreen('waiting')">
+                        <div>
+                            <div class="doc-title">[휴가신청서] 연차 휴가 사용의 건</div>
+                            <div class="doc-sub">기안자: 김숲속 사원 · 2026-11-16</div>
+                        </div>
+                        <span class="status-tag tag-need">대기중</span>
+                    </div>
+                    <div class="doc-item" onclick="switchScreen('waiting')">
+                        <div>
+                            <div class="doc-title">[지출결의서] 3지점 소모품 구입 비용</div>
+                            <div class="doc-sub">기안자: 이공무 부장 · 2026-11-15</div>
+                        </div>
+                        <span class="status-tag tag-need">대기중</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [2] 결재 대기함 -->
+            <div id="screen-waiting" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>⏳ 결재 대기 문서 목록 (2건)</h3></div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">[휴가신청서] 연차 휴가 사용의 건</div>
+                            <div class="doc-sub">기간: 2026-11-20 ~ 11-21 (2일)</div>
+                        </div>
+                        <button class="action-chip" style="background:var(--forest-green); color:#FFF;" onclick="approveDoc(this)">승인 🌻</button>
+                    </div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">[지출결의서] 3지점 소모품 구입 비용</div>
+                            <div class="doc-sub">금액: 150,000원</div>
+                        </div>
+                        <button class="action-chip" style="background:var(--forest-green); color:#FFF;" onclick="approveDoc(this)">승인 🌻</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [3] 새 기안 작성 -->
+            <div id="screen-draft" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>✨ 새 도토리 기안 작성</h3></div>
+                    <div class="form-group">
+                        <label>문서 양식 선택</label>
+                        <select id="formType">
+                            <option>휴가신청서 (연차/반차)</option>
+                            <option>지출결의서 (법인카드/경비)</option>
+                            <option>일반 기안서 (공지/협조)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>기안 제목</label>
+                        <input type="text" id="draftTitle" placeholder="제목을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label>결재선 지정 (정령들)</label>
+                        <input type="text" value="이병래 부장 (참조) → 숲속 관리자 (승인)" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>상세 내용</label>
+                        <textarea rows="4" placeholder="내용을 입력하세요"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="submitDraft()">결재 상신하기 🚀</button>
+                </div>
+            </div>
+
+            <!-- [4] 결재함 -->
+            <div id="screen-approval" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>🌻 결재함 (승인 완료)</h3></div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">[휴가신청서] 하계 휴가 사용의 건</div>
+                            <div class="doc-sub">처리일시: 2026-11-10 · 승인완료</div>
+                        </div>
+                        <span class="status-tag tag-done">승인됨</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [5] 반려함 -->
+            <div id="screen-rejected" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>🍂 반려된 문서함</h3></div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">[지출결의서] 비품 구매 건 (반려)</div>
+                            <div class="doc-sub">반려사유: 영수증 증빙 서류 보완 필요</div>
+                        </div>
+                        <span class="status-tag tag-need" onclick="switchScreen('draft')">보완·재기안 ✍️</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [6] 진행 중 기안함 -->
+            <div id="screen-progress" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>⛵ 진행 중인 기안 문서</h3></div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">[일반기안] 현장 관리감독자 교육 실시의 건</div>
+                            <div class="doc-sub">결재 진행중 (2/3단계)</div>
+                        </div>
+                        <span class="status-tag tag-prog">대기중</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [7] 알림함 -->
+            <div id="screen-alarm" class="screen-view">
+                <div class="section-box">
+                    <div class="section-header"><h3>🔔 숲속 알림함</h3></div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">새로운 결재 대기 문서가 도착했습니다.</div>
+                            <div class="doc-sub">10분 전 · [휴가신청서]</div>
+                        </div>
+                    </div>
+                    <div class="doc-item">
+                        <div>
+                            <div class="doc-title">상신한 기안이 1단계 승인되었습니다.</div>
+                            <div class="doc-sub">1시간 전 · [일반기안]</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 탭 바 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" id="nav-home" onclick="switchScreen('home')"><span>🏠</span>홈</div>
+            <div class="nav-item" id="nav-waiting" onclick="switchScreen('waiting')"><span>⏳</span>결재대기</div>
+            <div class="nav-item" id="nav-draft" onclick="switchScreen('draft')"><span>✨</span>기안하기</div>
+            <div class="nav-item" id="nav-approval" onclick="switchScreen('approval')"><span>🌻</span>결재함</div>
+            <div class="nav-item" id="nav-rejected" onclick="switchScreen('rejected')"><span>🍂</span>반려함</div>
+        </div>
+
+        <div id="toast" class="toast">처리가 완료되었습니다.</div>
+    </div>
+
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Noto Sans KR', 'sans-serif'],
-                        whimsical: ['Gaegu', 'cursive'],
-                    },
-                    colors: {
-                        ghibli: {
-                            forest: '#4A7C59',      /* Deep Forest Green */
-                            sage: '#8FBC8F',        /* Soft Sage Green */
-                            cream: '#FDFBF7',       /* Warm Cream */
-                            cardBg: '#FFFDF9',      /* Card White */
-                            terracotta: '#D97757',  /* Vintage Terracotta */
-                            sky: '#A2C4C9',         /* Soft Sky Blue */
-                            brown: '#5C4033',       /* Warm Wood Brown */
-                            textDark: '#3A3532',    /* Soft Dark Charcoal */
-                            textMuted: '#7D746D',   /* Muted Earthy Gray */
-                            border: '#E8E2D5',      /* Soft Creamy Border */
-                        }
-                    }
-                }
+        function enterApp(mode) {
+            document.getElementById('loginModal').classList.add('hidden');
+            showToast('🍃 ' + mode + '으로 접속했습니다!');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2500);
+        }
+
+        function switchScreen(screenName) {
+            document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById('screen-' + screenName);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById('nav-' + screenName);
+            if (activeNav) activeNav.classList.add('active');
+            document.querySelector('.app-body').scrollTop = 0;
+        }
+
+        function approveDoc(btn) {
+            showToast('🌻 결재가 승인되었습니다!');
+            btn.parentElement.style.opacity = '0.5';
+            btn.innerText = '승인완료';
+            btn.disabled = true;
+        }
+
+        function submitDraft() {
+            showToast('🚀 기안이 성공적으로 상신되었습니다!');
+            switchScreen('progress');
+        }
+
+        function copyShareLink() {
+            const shareText = "💬 [숲속 정령 전자결재 초대]\n🍃 팀 동료분들 환영합니다!\n계정 없이 원클릭으로 사내 전자결재 시스템에 접속하여 결재를 진행하세요.\n\n🔗 접속 링크: " + window.location.href;
+            navigator.clipboard.writeText(shareText).then(() => {
+                showToast('📋 톡방 공유 문구가 복사되었습니다!');
+            }).catch(() => {
+                showToast('🔗 주소창의 URL을 복사해서 공유해 주세요.');
+            });
+        }
+
+        function openLocationModal() {
+            const loc = prompt("설정할 현재 위치(지역명)를 입력하세요:", "아산시");
+            if (loc) {
+                document.getElementById('currentWeatherBadge').innerText = `☀️ 맑음 14°C · ${loc}`;
+                showToast(`📍 현재 위치가 [${loc}](으)로 설정되었습니다.`);
             }
         }
     </script>
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            color: #3A3532;
-        }
-        .ghibli-title {
-            font-family: 'Gaegu', cursive;
-        }
-        .ghibli-bg {
-            background-image: linear-gradient(rgba(74, 124, 89, 0.25), rgba(92, 64, 51, 0.35)), url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        .frosted-card {
-            background: rgba(255, 253, 249, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .frosted-header {
-            background: rgba(255, 253, 249, 0.90);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(244, 239, 230, 0.5);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #C8BDA8;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body class="h-full flex flex-col overflow-hidden ghibli-bg">
-
-    <!-- Social Login / Messenger Instant Access Modal Overlay -->
-    <div id="loginModal" class="fixed inset-0 bg-ghibli-brown/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="frosted-card rounded-3xl max-w-md w-full p-6 lg:p-8 shadow-2xl space-y-6 border border-ghibli-border text-center">
-            <div class="w-16 h-16 rounded-3xl bg-ghibli-forest text-white flex items-center justify-center text-3xl mx-auto shadow-lg rotate-3">
-                🌳
-            </div>
-            <div>
-                <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">숲속 정령 전자결재</h2>
-                <p class="text-xs text-ghibli-textMuted mt-1">구글 계정 없이 카카오톡/네이버 톡방 링크로 즉시 접속하세요.</p>
-            </div>
-
-            <!-- Instant Access Buttons -->
-            <div class="space-y-3 pt-2">
-                <button onclick="instantLogin('카카오톡 톡방')" class="w-full bg-[#FEE500] hover:bg-[#f4dc00] text-[#191919] font-bold py-3.5 px-4 rounded-2xl shadow-sm flex items-center justify-center space-x-3 transition">
-                    <span class="text-lg">💬</span>
-                    <span class="text-sm">카카오톡 톡방 링크로 즉시 접속</span>
-                </button>
-                <button onclick="instantLogin('네이버 밴드/웨일')" class="w-full bg-[#03C75A] hover:bg-[#02b351] text-white font-bold py-3.5 px-4 rounded-2xl shadow-sm flex items-center justify-center space-x-3 transition">
-                    <span class="text-lg"> N </span>
-                    <span class="text-sm">네이버 톡방 / 웨일로 즉시 접속</span>
-                </button>
-                <button onclick="instantLogin('숲속 게스트')" class="w-full bg-ghibli-forest hover:bg-[#3b6447] text-white font-bold py-3.5 px-4 rounded-2xl shadow-sm flex items-center justify-center space-x-3 transition">
-                    <span class="text-lg">🌿</span>
-                    <span class="text-sm">구글 없이 게스트(정령)로 바로 입장</span>
-                </button>
-            </div>
-
-            <div class="text-[11px] text-ghibli-textMuted pt-2 border-t border-ghibli-border">
-                💡 단톡방 공유 링크를 통해 로그인 없이 원클릭 접속이 가능합니다.
-            </div>
-        </div>
-    </div>
-
-    <!-- Top URL Browser Address Bar -->
-    <div class="bg-ghibli-brown/90 text-white px-3 py-2 flex items-center space-x-2 shrink-0 z-40 border-b border-white/10 shadow-sm">
-        <div class="flex items-center space-x-1 text-xs text-emerald-300 shrink-0 font-medium">
-            <i class="fa-solid fa-lock text-[10px]"></i>
-            <span class="hidden sm:inline">ghibli-approval.forest.kr</span>
-        </div>
-        <form onsubmit="handleAddressBarSearch(event)" class="flex-1 flex items-center bg-white/15 rounded-xl px-3 py-1 border border-white/20">
-            <i class="fa-solid fa-globe text-xs text-white/60 mr-2"></i>
-            <input type="text" id="addressBarInput" placeholder="URL 주소 또는 검색어를 입력하세요 (예: https://naver.com)..." class="w-full bg-transparent text-xs text-white placeholder-white/50 focus:outline-none">
-            <button type="submit" class="text-xs text-emerald-300 font-bold ml-2 hover:underline shrink-0">이동 🚀</button>
-        </form>
-        <button onclick="copyCurrentShareLink()" title="톡방 공유 링크 복사" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1 shrink-0">
-            <i class="fa-solid fa-share-nodes text-[11px]"></i>
-            <span class="hidden md:inline">톡방 링크복사</span>
-        </button>
-    </div>
-
-    <!-- Top Header -->
-    <header class="min-h-[4.25rem] py-2 frosted-header border-b border-ghibli-border flex items-center justify-between px-4 lg:px-6 z-30 shrink-0 shadow-sm">
-        <div class="flex items-center space-x-2 sm:space-x-3">
-            <button id="sidebarToggle" class="lg:hidden p-2 text-ghibli-brown hover:bg-white/60 rounded-full focus:outline-none">
-                <i class="fa-solid fa-seedling text-lg"></i>
-            </button>
-            <div onclick="switchTab('dashboard')" class="flex items-center space-x-2.5 cursor-pointer">
-                <div class="w-10 h-10 rounded-2xl bg-ghibli-forest text-white flex items-center justify-center font-bold text-xl shadow-md rotate-3">
-                    🌳
-                </div>
-                <div>
-                    <h1 class="font-bold text-ghibli-brown ghibli-title text-xl sm:text-2xl leading-tight">숲속 정령 전자결재</h1>
-                    <p class="text-[10px] text-ghibli-textMuted hidden sm:block">초록빛 평화로운 사내 협업 포털</p>
-                </div>
-            </div>
-
-            <!-- Previous / Next Step Navigation Buttons -->
-            <div class="flex items-center space-x-1 bg-white/75 border border-ghibli-border rounded-2xl p-1 ml-1 sm:ml-3 shadow-2xs">
-                <button id="btnPrevStep" onclick="goPrevStep()" title="이전 단계로 이동" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-ghibli-brown hover:bg-emerald-50 hover:text-ghibli-forest disabled:opacity-40 disabled:pointer-events-none transition flex items-center space-x-1">
-                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                    <span class="hidden md:inline">이전 단계</span>
-                </button>
-                <span class="text-ghibli-border text-xs">|</span>
-                <button id="btnNextStep" onclick="goNextStep()" title="다음 단계로 이동" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-ghibli-brown hover:bg-emerald-50 hover:text-ghibli-forest disabled:opacity-40 disabled:pointer-events-none transition flex items-center space-x-1">
-                    <span class="hidden md:inline">다음 단계</span>
-                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Top-Right Profile + Notification Bell + Weather Badge -->
-        <div class="flex items-center space-x-2.5 sm:space-x-3">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-ghibli-sage/90 text-white flex items-center justify-center font-bold shadow-inner text-lg shrink-0 border border-white/60">
-                🦊
-            </div>
-            <div class="flex flex-col items-end">
-                <div class="flex items-center space-x-1.5">
-                    <span id="userNameDisplay" class="text-xs sm:text-sm font-bold text-ghibli-brown">정면 (카카오톡)</span>
-                    <button onclick="switchTab('notifications')" title="숲속 알림함 열기" class="relative p-1.5 text-ghibli-brown hover:bg-amber-100/70 rounded-full transition focus:outline-none">
-                        <i class="fa-solid fa-bell text-sm sm:text-base text-ghibli-terracotta"></i>
-                        <span id="headerNotifBadge" class="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 bg-ghibli-terracotta text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">2</span>
-                    </button>
-                </div>
-                <button onclick="openLocationModal()" title="날씨 및 지역 설정 관리" class="flex items-center space-x-1 text-[10px] sm:text-[11px] font-medium text-ghibli-forest bg-emerald-50/90 px-2 py-0.5 rounded-full border border-emerald-200/70 mt-0.5 hover:bg-emerald-100 transition cursor-pointer">
-                    <span id="currentWeatherText">☀️ 맑음 14°C</span>
-                    <span class="text-ghibli-textMuted">· <span id="currentLocationText">아산시</span> ⚙️</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <div class="flex-1 flex overflow-hidden relative">
-        <div id="sidebarOverlay" class="fixed inset-0 bg-ghibli-brown/30 backdrop-blur-xs z-20 hidden lg:hidden transition-opacity"></div>
-
-        <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="absolute lg:relative inset-y-0 left-0 w-68 frosted-header border-r border-ghibli-border flex flex-col z-30 transform -translate-x-full lg:translate-x-0 transition-all duration-300 ease-in-out shrink-0 shadow-lg lg:shadow-none">
-            <div class="p-4 border-b border-ghibli-border flex items-center justify-between lg:hidden">
-                <span class="font-bold text-ghibli-brown ghibli-title text-lg">🌿 숲속 네비게이션</span>
-                <button id="sidebarClose" class="p-1.5 text-ghibli-brown hover:bg-white rounded-full">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- Desktop Collapse Toggle Button (Under first seedling symbol) -->
-            <div class="hidden lg:flex items-center justify-between px-3.5 pt-3 pb-1 border-b border-ghibli-border/40">
-                <div class="flex items-center space-x-1.5 text-ghibli-forest font-bold text-xs ghibli-title text-base">
-                    <span>🌱</span>
-                    <span>전자결재 메뉴</span>
-                </div>
-                <button onclick="toggleDesktopSidebar()" id="desktopToggleBtn" title="사이드바 여닫기" class="px-2 py-1 bg-white/80 hover:bg-white border border-ghibli-border rounded-xl text-xs font-bold text-ghibli-brown shadow-2xs transition flex items-center space-x-1">
-                    <i id="desktopToggleIcon" class="fa-solid fa-angles-left"></i>
-                    <span id="desktopToggleText" class="text-[10px]">접기</span>
-                </button>
-            </div>
-
-            <div class="p-4">
-                <button onclick="openNewDraft()" class="w-full bg-ghibli-terracotta hover:bg-[#c26243] text-white font-medium py-3 px-4 rounded-2xl shadow-md hover:shadow-lg flex items-center justify-center space-x-2 transition">
-                    <span class="text-lg">🍄</span>
-                    <span class="font-bold tracking-wide">새 기안 작성</span>
-                </button>
-            </div>
-
-            <nav id="sidebarNavContent" class="flex-1 px-3 space-y-1.5 overflow-y-auto">
-                <div class="pt-1 pb-1 px-3 text-[11px] font-bold tracking-wider text-ghibli-textMuted uppercase ghibli-title text-sm">마을 광장</div>
-                
-                <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-link flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-emerald-100/70 text-ghibli-forest transition shadow-xs">
-                    <span class="text-base">🏡</span>
-                    <span>숲속 대시보드</span>
-                </a>
-
-                <a href="#" onclick="switchTab('notifications')" id="nav-notifications" class="sidebar-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-base">🔔</span>
-                        <span>숲속 알림함</span>
-                    </div>
-                    <span id="sidebarNotifBadge" class="bg-ghibli-terracotta text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-xs">2</span>
-                </a>
-
-                <a href="#" onclick="switchTab('board')" id="nav-board" class="sidebar-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-base">📋</span>
-                        <span>숲속 게시판</span>
-                    </div>
-                    <span id="sidebarBoardBadge" class="bg-amber-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-xs">1</span>
-                </a>
-
-                <div class="pt-3 pb-1 px-3 text-[11px] font-bold tracking-wider text-ghibli-textMuted uppercase ghibli-title text-sm">문서함 메뉴</div>
-
-                <!-- 1. 개인문서함 (Accordion) -->
-                <div class="space-y-1">
-                    <button onclick="toggleAccordion('personal-docs')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-ghibli-brown hover:bg-white/60 transition focus:outline-none">
-                        <div class="flex items-center space-x-2.5">
-                            <i id="icon-personal-docs" class="fa-solid fa-chevron-down text-xs text-ghibli-textMuted transition-transform"></i>
-                            <span class="text-base">📁</span>
-                            <span>개인문서함</span>
-                        </div>
-                    </button>
-                    <div id="acc-personal-docs" class="pl-6 space-y-1 overflow-hidden transition-all duration-200">
-                        <a href="#" onclick="switchTab('approval')" id="nav-approval" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>미결함 (결재 대기)</span>
-                            <span id="sidebarPendingBadge" class="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
-                        </a>
-                        <a href="#" onclick="switchTab('box-draft')" id="nav-box-draft" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>진행함 (상신내역)</span>
-                            <span id="sidebarSentBadge" class="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                        <a href="#" onclick="switchTab('box-draft')" id="nav-sub-draft" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>기안함</span>
-                            <span id="sidebarDraftBoxBadge" class="bg-sky-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                        <a href="#" onclick="switchTab('box-approval')" id="nav-box-approval" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>완료함 (승인완료)</span>
-                            <span id="sidebarBoxBadge" class="bg-ghibli-forest text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                        <a href="#" onclick="switchTab('box-rejected')" id="nav-box-rejected" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>반려함 (반송함)</span>
-                            <span id="sidebarRejectedBadge" class="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                        <a href="#" onclick="switchTab('temp-drafts')" id="nav-temp-drafts" class="sidebar-link flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 hover:text-ghibli-forest transition">
-                            <span>임시보관함</span>
-                            <span id="sidebarTempBadge" class="bg-stone-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 2. 부서문서함 (Accordion) -->
-                <div class="space-y-1 pt-1">
-                    <button onclick="toggleAccordion('dept-docs')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-ghibli-brown hover:bg-white/60 transition focus:outline-none">
-                        <div class="flex items-center space-x-2.5">
-                            <i id="icon-dept-docs" class="fa-solid fa-chevron-right text-xs text-ghibli-textMuted transition-transform"></i>
-                            <span class="text-base">🌿</span>
-                            <span>부서문서함</span>
-                        </div>
-                    </button>
-                    <div id="acc-dept-docs" class="pl-6 space-y-1 overflow-hidden hidden transition-all duration-200">
-                        <a href="#" onclick="showToast('🌿 부서 미결함은 현재 비어 있습니다.')" class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 transition">
-                            <span>부서 미결함</span>
-                            <span class="bg-stone-300 text-stone-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 3. 개인보관함 (Accordion) -->
-                <div class="space-y-1 pt-1">
-                    <button onclick="toggleAccordion('personal-storage')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold text-ghibli-brown hover:bg-white/60 transition focus:outline-none">
-                        <div class="flex items-center space-x-2.5">
-                            <i id="icon-personal-storage" class="fa-solid fa-chevron-right text-xs text-ghibli-textMuted transition-transform"></i>
-                            <span class="text-base">🌰</span>
-                            <span>개인보관함</span>
-                        </div>
-                    </button>
-                    <div id="acc-personal-storage" class="pl-6 space-y-1 overflow-hidden hidden transition-all duration-200">
-                        <a href="#" onclick="switchTab('box-approval')" class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-ghibli-textDark hover:bg-white/60 transition">
-                            <span>도토리 보관함</span>
-                            <span class="bg-ghibli-forest text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
-                        </a>
-                    </div>
-                </div>
-            </nav>
-
-            <div class="p-4 border-t border-ghibli-border bg-emerald-50/30 text-xs text-ghibli-textMuted text-center">
-                <div class="text-xl mb-1">🌲🍃☁️</div>
-                <div class="font-bold text-ghibli-forest">Ghibli Forest Portal</div>
-                <div class="text-[10px] text-gray-500 mt-0.5">카카오톡 톡방 간편 접속 완료</div>
-            </div>
-        </aside>
-
-        <!-- Content Area -->
-        <main class="flex-1 flex flex-col overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8">
-
-            <!-- TAB 1: 숲속 대시보드 (Dashboard) -->
-            <div id="tab-dashboard" class="tab-content space-y-6 max-w-6xl mx-auto w-full">
-                <!-- Ghibli Welcome Banner -->
-                <div class="bg-gradient-to-r from-ghibli-forest/90 to-[#3b6447]/90 backdrop-blur-md rounded-3xl p-6 lg:p-8 text-white shadow-lg relative overflow-hidden border border-emerald-500/30">
-                    <div class="absolute -right-4 -bottom-4 text-7xl sm:text-8xl opacity-20 select-none pointer-events-none">🌳🐇</div>
-                    <div class="relative z-10">
-                        <span class="bg-white/25 text-xs font-semibold px-3.5 py-1 rounded-full backdrop-blur-sm tracking-wide">✨ 카카오톡 톡방 간편 접속 모드</span>
-                        <h2 class="text-2xl lg:text-3xl font-bold mt-3 ghibli-title tracking-wide">안녕하세요, <span id="welcomeName">정면님</span>! 🌿</h2>
-                        <p class="text-emerald-100 text-sm mt-1 max-w-xl leading-relaxed">
-                            오늘 바람결에 실려 온 결재 대기 도토리가 <strong id="bannerPendingCount" class="text-yellow-200 underline">2건</strong>, 읽지 않은 알림이 <strong id="bannerNotifCount" class="text-yellow-200 underline">2건</strong> 있습니다.
-                        </p>
-                        <div class="mt-5 flex flex-wrap gap-2.5">
-                            <button onclick="switchTab('approval')" class="bg-white text-ghibli-forest font-bold px-4 py-2.5 rounded-2xl shadow hover:bg-emerald-50 transition text-xs sm:text-sm flex items-center space-x-1.5">
-                                <span>🌻</span>
-                                <span>결재 대기 보기</span>
-                            </button>
-                            <button onclick="openNewDraft()" class="bg-ghibli-terracotta border border-white/20 text-white font-bold px-4 py-2.5 rounded-2xl hover:bg-[#c26243] transition text-xs sm:text-sm flex items-center space-x-1.5 shadow">
-                                <span>🍄</span>
-                                <span>새 기안 작성</span>
-                            </button>
-                            <button onclick="switchTab('notifications')" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold px-4 py-2.5 rounded-2xl transition text-xs sm:text-sm flex items-center space-x-1.5">
-                                <span>🔔</span>
-                                <span>알림함 확인</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Status Cards Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div class="frosted-card p-4 sm:p-5 rounded-2xl border border-ghibli-border shadow-sm hover:shadow-md transition cursor-pointer group" onclick="switchTab('approval')">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-ghibli-textMuted">결재 대기</span>
-                            <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg group-hover:scale-110 transition">⏳</div>
-                        </div>
-                        <div class="mt-3 flex items-baseline justify-between">
-                            <span id="dashPendingCount" class="font-extrabold text-ghibli-brown ghibli-title text-3xl sm:text-4xl">2건</span>
-                            <span class="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">처리 필요</span>
-                        </div>
-                    </div>
-                    <div class="frosted-card p-4 sm:p-5 rounded-2xl border border-ghibli-border shadow-sm hover:shadow-md transition cursor-pointer group" onclick="switchTab('box-draft')">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-ghibli-textMuted">진행 중 기안</span>
-                            <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg group-hover:scale-110 transition">⛵</div>
-                        </div>
-                        <div class="mt-3 flex items-baseline justify-between">
-                            <span id="dashSentCount" class="font-extrabold text-ghibli-brown ghibli-title text-3xl sm:text-4xl">1건</span>
-                            <span class="text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">상신됨</span>
-                        </div>
-                    </div>
-                    <div class="frosted-card p-4 sm:p-5 rounded-2xl border border-ghibli-border shadow-sm hover:shadow-md transition cursor-pointer group" onclick="switchTab('box-approval')">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-ghibli-textMuted">결재함 (승인완료)</span>
-                            <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-ghibli-forest flex items-center justify-center text-lg group-hover:scale-110 transition">🌰</div>
-                        </div>
-                        <div class="mt-3 flex items-baseline justify-between">
-                            <span id="dashBoxCount" class="font-extrabold text-ghibli-brown ghibli-title text-3xl sm:text-4xl">1건</span>
-                            <span class="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">승인 보관</span>
-                        </div>
-                    </div>
-                    <div class="frosted-card p-4 sm:p-5 rounded-2xl border border-ghibli-border shadow-sm hover:shadow-md transition cursor-pointer group" onclick="switchTab('box-rejected')">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-ghibli-textMuted">반려함</span>
-                            <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-lg group-hover:scale-110 transition">🍂</div>
-                        </div>
-                        <div class="mt-3 flex items-baseline justify-between">
-                            <span id="dashRejectedCount" class="font-extrabold text-ghibli-brown ghibli-title text-3xl sm:text-4xl">1건</span>
-                            <span class="text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">보완·재기안</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dashboard Recent Pending List -->
-                <div class="frosted-card rounded-3xl border border-ghibli-border shadow-sm overflow-hidden">
-                    <div class="p-5 border-b border-ghibli-border flex items-center justify-between bg-white/40">
-                        <h3 class="font-bold text-ghibli-brown text-lg ghibli-title flex items-center space-x-2">
-                            <span>📜</span>
-                            <span>최근 도착한 결재 대기 문서</span>
-                        </h3>
-                        <button onclick="switchTab('approval')" class="text-xs font-bold text-ghibli-forest hover:underline">전체보기 →</button>
-                    </div>
-                    <div id="dashboardPendingList" class="divide-y divide-ghibli-border">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: 숲속 알림함 (Notification Center) -->
-            <div id="tab-notifications" class="tab-content hidden space-y-6 max-w-4xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title flex items-center space-x-2">
-                            <span>🔔</span>
-                            <span>숲속 알림함</span>
-                        </h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">결재 요청, 승인 완료, 반려 등 중요한 숲속 소식이 도착합니다.</p>
-                    </div>
-                    <div class="flex items-center space-x-2 self-end sm:self-center">
-                        <button onclick="markAllNotificationsRead()" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-ghibli-forest border border-emerald-200 rounded-xl text-xs font-bold transition">
-                            ✓ 모두 읽음 처리
-                        </button>
-                        <button onclick="clearAllNotifications()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition">
-                            🗑️ 전체 비우기
-                        </button>
-                    </div>
-                </div>
-
-                <div id="notificationList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 3: 기안서 작성 (New Draft Form) -->
-            <div id="tab-draft" class="tab-content hidden space-y-6 max-w-4xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border shadow-md p-6 lg:p-8">
-                    <div class="flex items-center justify-between pb-5 border-b border-ghibli-border">
-                        <div>
-                            <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">✍️ 새 도토리 기안서 작성</h2>
-                            <p class="text-xs text-ghibli-textMuted mt-1">숲속 표준 양식을 선택하고 내용을 작성해 임시저장하거나 상신하세요.</p>
-                        </div>
-                        <button onclick="switchTab('dashboard')" class="text-xs font-bold text-ghibli-textMuted hover:text-ghibli-brown px-3 py-1.5 rounded-xl bg-white/70 border border-ghibli-border transition">
-                            ← 돌아가기
-                        </button>
-                    </div>
-
-                    <form onsubmit="handleDraftSubmit(event)" class="mt-6 space-y-5">
-                        <input type="hidden" id="editingTempId" value="">
-                        <div>
-                            <label class="block text-sm font-bold text-ghibli-brown mb-2">양식 선택</label>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                <button type="button" data-form="휴가신청서" onclick="selectFormType('휴가신청서')" class="form-type-btn border-2 border-ghibli-forest bg-emerald-50/80 rounded-2xl p-3.5 flex flex-col items-center justify-center transition">
-                                    <span class="text-2xl mb-1">🍃</span>
-                                    <span class="text-xs font-bold text-ghibli-brown">휴가신청서</span>
-                                </button>
-                                <button type="button" data-form="지출결의서" onclick="selectFormType('지출결의서')" class="form-type-btn border-2 border-ghibli-border bg-white/70 hover:border-gray-400 rounded-2xl p-3.5 flex flex-col items-center justify-center transition">
-                                    <span class="text-2xl mb-1">🌰</span>
-                                    <span class="text-xs font-bold text-ghibli-brown">지출결의서</span>
-                                </button>
-                                <button type="button" data-form="품의서" onclick="selectFormType('품의서')" class="form-type-btn border-2 border-ghibli-border bg-white/70 hover:border-gray-400 rounded-2xl p-3.5 flex flex-col items-center justify-center transition">
-                                    <span class="text-2xl mb-1">🍄</span>
-                                    <span class="text-xs font-bold text-ghibli-brown">품의서</span>
-                                </button>
-                                <button type="button" data-form="출장신청서" onclick="selectFormType('출장신청서')" class="form-type-btn border-2 border-ghibli-border bg-white/70 hover:border-gray-400 rounded-2xl p-3.5 flex flex-col items-center justify-center transition">
-                                    <span class="text-2xl mb-1">🚂</span>
-                                    <span class="text-xs font-bold text-ghibli-brown">출장신청서</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-ghibli-textMuted mb-1">기안자</label>
-                                <input type="text" id="draftAuthorDisplay" value="정면/지브리관리팀" disabled class="w-full bg-white/50 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textMuted cursor-not-allowed">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-ghibli-textMuted mb-1">문서 제목 *</label>
-                                <input type="text" id="draftTitle" required placeholder="예: [휴가신청] 하계 숲속 연차 휴가 사용의 건" class="w-full bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest transition">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-emerald-50/40 rounded-2xl border border-ghibli-border">
-                            <div>
-                                <label id="metaFieldLabel" class="block text-xs font-bold text-ghibli-textMuted mb-1">희망 일자 / 기간</label>
-                                <input type="text" id="draftMeta" placeholder="예: 2026.11.20 ~ 2026.11.22 (3일간)" class="w-full bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-ghibli-textMuted mb-1">결재선 지정</label>
-                                <select id="draftApprover" class="w-full bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest">
-                                    <option value="치히로 팀장 → 이유경 본부장">정면 → 토토로 유경 본부장</option>
-                                    <option value="정면 → 유경 원장">가오나시 → 토토로 유경 본부장</option>
-                                    <option value="토토로 수호자 (전결)">토토로 수호자 (전결)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-ghibli-textMuted mb-1">상세 내용 및 사유 *</label>
-                            <textarea id="draftContent" rows="4" required placeholder="바람의 정령에게 전할 상세 내용을 적어주세요." class="w-full border border-ghibli-border rounded-xl p-3.5 text-sm bg-white/90 text-ghibli-textDark focus:outline-none focus:border-ghibli-forest"></textarea>
-                        </div>
-
-                        <div class="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-ghibli-border">
-                            <button type="button" onclick="saveTempDraft()" class="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-xl text-sm font-bold text-ghibli-brown transition">
-                                🧺 임시 저장
-                            </button>
-                            <button type="submit" class="px-6 py-2.5 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-sm font-bold shadow-md transition">
-                                🍃 결재 상신
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- TAB 4: 임시 저장함 (Temp Drafts Box) -->
-            <div id="tab-temp-drafts" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">🧺 임시 저장함</h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">작성 중이던 문서를 불러와 이어서 작성하거나 삭제할 수 있습니다.</p>
-                    </div>
-                    <button onclick="openNewDraft()" class="px-4 py-2 bg-ghibli-terracotta hover:bg-[#c26243] text-white rounded-xl text-xs font-bold shadow-xs transition">
-                        + 새 기안 작성
-                    </button>
-                </div>
-
-                <div id="tempDraftList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 5: 결재 처리함 (Approval Queue) -->
-            <div id="tab-approval" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm">
-                    <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">📥 결재 처리함</h2>
-                    <p class="text-xs text-ghibli-textMuted mt-1">승인(🌻)된 문서는 <strong>결재함</strong>으로, 반려(🍂)된 문서는 자동으로 <strong>반려함</strong>으로 이동합니다.</p>
-                </div>
-
-                <div id="approvalQueueList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 6: 기안함 (Sent Drafts Box) -->
-            <div id="tab-box-draft" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">📤 기안함 (상신 내역)</h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">내가 작성하여 결재 상신한 문서의 진행 현황입니다.</p>
-                    </div>
-                    <button onclick="openNewDraft()" class="px-4 py-2 bg-ghibli-terracotta hover:bg-[#c26243] text-white rounded-xl text-xs font-bold shadow-xs transition">
-                        + 새 기안 작성
-                    </button>
-                </div>
-
-                <div id="sentDraftList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 7: 결재함 (Approved Box with Delete) -->
-            <div id="tab-box-approval" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">🌰 결재함 (승인 완료 보관소)</h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">최종 승인 완료된 결재 문서를 조회하고 불필요한 내역을 삭제할 수 있습니다.</p>
-                    </div>
-                    <button onclick="switchTab('box-rejected')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition self-start sm:self-center">
-                        🍂 반려함 바로가기 →
-                    </button>
-                </div>
-
-                <div id="approvalBoxList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 8: 반려함 (Rejected Box) -->
-            <div id="tab-box-rejected" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">🍂 반려함 (반려 문서 보관소)</h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">기안이 반려되면 자동으로 이곳으로 이동합니다. 내용을 보완해 재기안하거나 삭제할 수 있습니다.</p>
-                    </div>
-                    <button onclick="openNewDraft()" class="px-4 py-2 bg-ghibli-terracotta hover:bg-[#c26243] text-white rounded-xl text-xs font-bold shadow-xs transition self-start sm:self-center">
-                        + 새 기안 작성
-                    </button>
-                </div>
-
-                <div id="rejectedBoxList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-            <!-- TAB 9: 숲속 게시판 (Forest Bulletin Board) -->
-            <div id="tab-board" class="tab-content hidden space-y-6 max-w-5xl mx-auto w-full">
-                <div class="frosted-card rounded-3xl border border-ghibli-border p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-ghibli-brown ghibli-title">📋 숲속 마을 게시판</h2>
-                        <p class="text-xs text-ghibli-textMuted mt-1">사내 공지사항, 업무 노하우 공유, 따뜻한 숲속 이야기를 나누는 공간입니다.</p>
-                    </div>
-                    <button onclick="openBoardWriteModal()" class="px-4 py-2.5 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-xs font-bold shadow-sm transition self-start sm:self-center flex items-center space-x-1.5">
-                        <span>✍️</span>
-                        <span>새 게시글 쓰기</span>
-                    </button>
-                </div>
-
-                <!-- Board Category Filter -->
-                <div class="flex items-center space-x-1.5 overflow-x-auto pb-1">
-                    <button onclick="setBoardCategory('ALL')" id="board-cat-ALL" class="board-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-ghibli-forest text-white shadow-2xs transition whitespace-nowrap">전체보기</button>
-                    <button onclick="setBoardCategory('공지사항')" id="board-cat-공지사항" class="board-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/80 text-ghibli-textDark hover:bg-white border border-ghibli-border transition whitespace-nowrap">📢 공지사항</button>
-                    <button onclick="setBoardCategory('업무공유')" id="board-cat-업무공유" class="board-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/80 text-ghibli-textDark hover:bg-white border border-ghibli-border transition whitespace-nowrap">💡 업무공유</button>
-                    <button onclick="setBoardCategory('자유수다')" id="board-cat-자유수다" class="board-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/80 text-ghibli-textDark hover:bg-white border border-ghibli-border transition whitespace-nowrap">🍵 자유수다</button>
-                </div>
-
-                <div id="boardPostList" class="space-y-3">
-                    <!-- Rendered dynamically -->
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- Mobile Bottom Quick Navigation Bar -->
-    <nav class="lg:hidden fixed bottom-0 inset-x-0 frosted-header border-t border-ghibli-border flex items-center justify-around py-2 px-1 z-20 shadow-lg">
-        <button onclick="switchTab('dashboard')" class="flex flex-col items-center text-[11px] font-bold text-ghibli-brown hover:text-ghibli-forest px-1.5 py-1">
-            <span class="text-base">🏡</span>
-            <span>대시보드</span>
-        </button>
-        <button onclick="switchTab('board')" class="flex flex-col items-center text-[11px] font-bold text-ghibli-brown hover:text-ghibli-forest px-1.5 py-1">
-            <span class="text-base">📋</span>
-            <span>게시판</span>
-        </button>
-        <button onclick="openNewDraft()" class="flex flex-col items-center text-[11px] font-bold text-white bg-ghibli-terracotta rounded-2xl px-3 py-1.5 shadow-sm -mt-3">
-            <span class="text-base">🍄</span>
-            <span>기안작성</span>
-        </button>
-        <button onclick="switchTab('approval')" class="relative flex flex-col items-center text-[11px] font-bold text-ghibli-brown hover:text-ghibli-forest px-1.5 py-1">
-            <span class="text-base">📥</span>
-            <span>결재대기</span>
-            <span id="mobilePendingDot" class="absolute top-0.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
-        </button>
-        <button onclick="switchTab('box-rejected')" class="flex flex-col items-center text-[11px] font-bold text-ghibli-brown hover:text-ghibli-forest px-1.5 py-1">
-            <span class="text-base">🍂</span>
-            <span>반려함</span>
-        </button>
-    </nav>
-
-    <!-- Location & Weather Settings Modal -->
-    <div id="locationModal" class="fixed inset-0 bg-ghibli-brown/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="frosted-card rounded-3xl max-w-md w-full p-6 lg:p-7 shadow-2xl space-y-5 border border-ghibli-border">
-            <div class="flex items-center justify-between pb-3 border-b border-ghibli-border">
-                <h3 class="text-xl font-bold text-ghibli-brown ghibli-title">🌤️ 숲속 날씨 및 지역 설정</h3>
-                <button onclick="closeLocationModal()" class="text-ghibli-textMuted hover:text-ghibli-brown p-1.5 rounded-full">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-ghibli-textMuted mb-2">저장된 지역 목록에서 선택</label>
-                    <div id="locationListContainer" class="flex flex-wrap gap-2">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-                <div class="pt-2 border-t border-ghibli-border">
-                    <label class="block text-xs font-bold text-ghibli-textMuted mb-1">새로운 지역 추가하기</label>
-                    <div class="flex space-x-2">
-                        <input type="text" id="newLocationInput" placeholder="예: 부산광역시 해운대구" class="flex-1 bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2 text-xs text-ghibli-textDark focus:outline-none focus:border-ghibli-forest">
-                        <button type="button" onclick="addNewLocation()" class="px-4 py-2 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-xs font-bold transition">추가</button>
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-end pt-2 border-t border-ghibli-border">
-                <button type="button" onclick="closeLocationModal()" class="px-5 py-2.5 bg-ghibli-brown text-white rounded-xl text-xs font-bold transition">확인</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Board Write Modal -->
-    <div id="boardWriteModal" class="fixed inset-0 bg-ghibli-brown/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="frosted-card rounded-3xl max-w-lg w-full p-6 lg:p-7 shadow-2xl space-y-4 border border-ghibli-border">
-            <div class="flex items-center justify-between pb-3 border-b border-ghibli-border">
-                <h3 class="text-xl font-bold text-ghibli-brown ghibli-title">✍️ 숲속 게시판 새 글 작성</h3>
-                <button onclick="closeBoardWriteModal()" class="text-ghibli-textMuted hover:text-ghibli-brown p-1.5 rounded-full">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <form onsubmit="handleBoardSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-ghibli-textMuted mb-1">말머리 선택</label>
-                    <select id="boardWriteCategory" class="w-full bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest">
-                        <option value="공지사항">📢 공지사항</option>
-                        <option value="업무공유">💡 업무공유</option>
-                        <option value="자유수다" selected>🍵 자유수다</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-ghibli-textMuted mb-1">제목 *</label>
-                    <input type="text" id="boardWriteTitle" required placeholder="게시글 제목을 입력해주세요" class="w-full bg-white/90 border border-ghibli-border rounded-xl px-3.5 py-2.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-ghibli-textMuted mb-1">내용 *</label>
-                    <textarea id="boardWriteContent" rows="4" required placeholder="숲속 동료들과 나누고 싶은 이야기를 적어주세요" class="w-full bg-white/90 border border-ghibli-border rounded-xl p-3.5 text-sm text-ghibli-textDark focus:outline-none focus:border-ghibli-forest"></textarea>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2 border-t border-ghibli-border">
-                    <button type="button" onclick="closeBoardWriteModal()" class="px-4 py-2 border border-ghibli-border rounded-xl text-xs font-bold text-ghibli-textMuted hover:bg-white transition">취소</button>
-                    <button type="submit" class="px-5 py-2 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-xs font-bold shadow-xs transition">등록하기 🌿</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Board Detail & Comments Modal -->
-    <div id="boardDetailModal" class="fixed inset-0 bg-ghibli-brown/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="frosted-card rounded-3xl max-w-lg w-full p-6 lg:p-7 shadow-2xl space-y-4 border border-ghibli-border max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between pb-3 border-b border-ghibli-border shrink-0">
-                <span id="boardModalCat" class="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full">카테고리</span>
-                <button onclick="closeBoardDetailModal()" class="text-ghibli-textMuted hover:text-ghibli-brown p-1.5 rounded-full">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div class="overflow-y-auto space-y-4 flex-1 pr-1">
-                <div>
-                    <h3 id="boardModalTitle" class="text-xl font-bold text-ghibli-brown ghibli-title">게시글 제목</h3>
-                    <p id="boardModalMeta" class="text-xs text-ghibli-textMuted mt-1">작성자 · 일시 · 조회수</p>
-                </div>
-                <div class="bg-white/80 p-4 rounded-2xl border border-ghibli-border text-sm text-ghibli-textDark leading-relaxed whitespace-pre-line" id="boardModalContent">
-                    내용
-                </div>
-                <!-- Comments Section -->
-                <div class="space-y-2.5 pt-2">
-                    <div class="text-xs font-bold text-ghibli-brown flex items-center space-x-1">
-                        <span>💬</span>
-                        <span>숲속 댓글 (<span id="boardModalCommentCount">0</span>)</span>
-                    </div>
-                    <div id="boardModalCommentsList" class="space-y-2"></div>
-                    <form onsubmit="handleAddComment(event)" class="flex items-center space-x-2 pt-1">
-                        <input type="hidden" id="boardModalPostId" value="">
-                        <input type="text" id="boardCommentInput" required placeholder="따뜻한 댓글을 남겨보세요..." class="flex-1 bg-white/90 border border-ghibli-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-ghibli-forest">
-                        <button type="submit" class="px-3.5 py-2 bg-ghibli-forest text-white rounded-xl text-xs font-bold shrink-0">등록</button>
-                    </form>
-                </div>
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-ghibli-border shrink-0">
-                <button id="boardModalDeleteBtn" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition">게시글 삭제 🗑️</button>
-                <button onclick="closeBoardDetailModal()" class="px-4 py-2 bg-ghibli-brown text-white rounded-xl text-xs font-bold transition">닫기</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Document Detail Modal -->
-    <div id="detailModal" class="fixed inset-0 bg-ghibli-brown/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="frosted-card rounded-3xl max-w-lg w-full p-6 lg:p-7 shadow-2xl space-y-4 border border-ghibli-border">
-            <div class="flex items-center justify-between pb-3 border-b border-ghibli-border">
-                <div class="flex items-center space-x-2">
-                    <span id="modalTypeBadge" class="text-xs font-bold px-3 py-1 bg-emerald-100 text-ghibli-forest rounded-full">양식</span>
-                    <span id="modalStatusBadge" class="text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full">상태</span>
-                </div>
-                <button onclick="closeDetailModal()" class="text-ghibli-textMuted hover:text-ghibli-brown p-1.5 rounded-full">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div>
-                <h3 id="modalTitle" class="text-xl font-bold text-ghibli-brown ghibli-title">문서 제목</h3>
-                <p class="text-xs text-ghibli-textMuted mt-1">
-                    기안자: <span id="modalAuthor" class="font-bold text-ghibli-brown">작성자</span> · 일시: <span id="modalDate">2026.11.16</span>
-                </p>
-                <p id="modalMetaInfo" class="text-xs text-ghibli-forest font-medium mt-1"></p>
-            </div>
-            <div class="bg-white/75 p-4 rounded-2xl border border-ghibli-border text-sm text-ghibli-textDark space-y-2">
-                <div class="font-bold text-ghibli-forest ghibli-title text-base">🌿 상세 내용</div>
-                <p id="modalContentDesc" class="leading-relaxed whitespace-pre-line">상세 내용</p>
-            </div>
-            <div id="modalRejectReasonDisplay" class="hidden bg-rose-50/90 p-3.5 rounded-2xl border border-rose-200 text-xs text-rose-800">
-                <div class="font-bold mb-1">🍂 반려 사유</div>
-                <p id="modalRejectReasonText"></p>
-            </div>
-            <div id="modalRejectInputBox" class="hidden space-y-2">
-                <label class="block text-xs font-bold text-rose-700">🍂 반려 사유 입력 (선택 시 결재함으로 이동)</label>
-                <input type="text" id="modalRejectInput" placeholder="반려 사유를 간단히 적어주세요 (예: 증빙 영수증 첨부 요망)" class="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-500">
-            </div>
-            <div id="modalFooterActions" class="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-ghibli-border"></div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toastBox" class="fixed bottom-16 lg:bottom-6 right-4 lg:right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 ease-out bg-ghibli-brown text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center space-x-3 text-sm border border-white/20 max-w-sm">
-        <span class="text-xl shrink-0">🍃</span>
-        <span id="toastMessage" class="font-medium">처리가 완료되었습니다.</span>
-    </div>
-
-    <!-- JavaScript Application State & Logic -->
-    <script>
-        let currentUserName = "정면";
-        let currentLocation = "아산시";
-        let currentWeather = "☀️ 맑음 14°C";
-        let savedLocations = [
-            { name: "아산시", weather: "☀️ 맑음 14°C" },
-            { name: "서울특별시", weather: "🌤️ 구름 12°C" },
-            { name: "제주시", weather: "🌧️ 비 17°C" },
-            { name: "춘천시", weather: "🌥️ 흐림 10°C" }
-        ];
-
-        window.instantLogin = function(source) {
-            currentUserName = source === '카카오톡 톡방' ? '정면 (카카오톡)' : (source === '네이버 밴드/웨일' ? '정면 (네이버)' : '정면 (숲속 게스트)');
-            document.getElementById('userNameDisplay').innerText = currentUserName;
-            document.getElementById('welcomeName').innerText = currentUserName.split(' ')[0] + '님';
-            document.getElementById('draftAuthorDisplay').value = currentUserName + ' / 지브리관리팀';
-            document.getElementById('loginModal').classList.add('hidden');
-            showToast(`🌿 ${source} 계정으로 구글 로그인 없이 즉시 접속되었습니다!`);
-        };
-
-        window.openLocationModal = function() {
-            renderLocationList();
-            document.getElementById('locationModal').classList.remove('hidden');
-        };
-
-        window.closeLocationModal = function() {
-            document.getElementById('locationModal').classList.add('hidden');
-        };
-
-        function renderLocationList() {
-            const container = document.getElementById('locationListContainer');
-            container.innerHTML = savedLocations.map(loc => `
-                <div class="flex items-center space-x-1 bg-white border ${loc.name === currentLocation ? 'border-ghibli-forest bg-emerald-50' : 'border-ghibli-border'} rounded-xl px-3 py-1.5 text-xs">
-                    <span onclick="selectLocation('${loc.name}')" class="cursor-pointer font-bold text-ghibli-brown">${loc.name} (${loc.weather})</span>
-                    ${savedLocations.length > 1 ? `<button onclick="deleteLocation('${loc.name}')" class="text-rose-500 hover:text-rose-700 ml-1.5 font-bold">×</button>` : ''}
-                </div>
-            `).join('');
-        }
-
-        window.selectLocation = function(locName) {
-            const found = savedLocations.find(l => l.name === locName);
-            if (found) {
-                currentLocation = found.name;
-                currentWeather = found.weather;
-                document.getElementById('currentLocationText').innerText = currentLocation;
-                document.getElementById('currentWeatherText').innerText = currentWeather;
-                renderLocationList();
-                showToast(`📍 현재 위치가 [${currentLocation}]으로 설정되었습니다.`);
-            }
-        };
-
-        window.addNewLocation = function() {
-            const input = document.getElementById('newLocationInput');
-            const name = input.value.trim();
-            if (!name) {
-                showToast('⚠️ 지역 이름을 입력해주세요.');
-                return;
-            }
-            if (savedLocations.some(l => l.name === name)) {
-                showToast('⚠️ 이미 등록된 지역입니다.');
-                return;
-            }
-            savedLocations.push({ name: name, weather: '🌤️ 맑음 15°C' });
-            input.value = '';
-            renderLocationList();
-            showToast(`✨ [${name}] 지역이 추가되었습니다.`);
-        };
-
-        window.deleteLocation = function(locName) {
-            if (savedLocations.length <= 1) {
-                showToast('⚠️ 최소 1개의 지역은 유지되어야 합니다.');
-                return;
-            }
-            savedLocations = savedLocations.filter(l => l.name !== locName);
-            if (currentLocation === locName) {
-                selectLocation(savedLocations[0].name);
-            } else {
-                renderLocationList();
-            }
-            showToast('🗑️ 지역이 목록에서 삭제되었습니다.');
-        };
-
-        window.handleAddressBarSearch = function(e) {
-            e.preventDefault();
-            const input = document.getElementById('addressBarInput').value.trim();
-            if (!input) return;
-
-            if (input.startsWith('http://') || input.startsWith('https://') || input.includes('.com') || input.includes('.kr') || input.includes('.net')) {
-                showToast(`🌐 입력하신 링크(${input})로 이동합니다.`);
-                window.open(input.startsWith('http') ? input : 'https://' + input, '_blank');
-            } else if (input.includes('공지') || input.includes('게시판')) {
-                switchTab('board');
-                showToast(`📋 '${input}' 관련 게시판으로 이동합니다.`);
-            } else if (input.includes('휴가') || input.includes('기안')) {
-                openNewDraft();
-                showToast(`🍄 '${input}' 기안 작성 화면으로 이동합니다.`);
-            } else {
-                const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(input)}`;
-                showToast(`🔍 네이버에서 '${input}' 검색 페이지를 엽니다.`);
-                window.open(searchUrl, '_blank');
-            }
-            document.getElementById('addressBarInput').value = '';
-        };
-
-        window.copyCurrentShareLink = function() {
-            const shareText = "💬 [지브리 숲속 정령 전자결재 초대]\n🍃 카카오톡/네이버 톡방 동료분들 환영합니다!\n구글 계정 없이 원클릭으로 사내 전자결재 시스템에 접속하여 결재 및 기안을 진행하세요.\n🔗 접속 링크: " + window.location.href;
-            
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(shareText).then(() => {
-                    showToast('📋 톡방 공유 안내 문구가 복사되었습니다! 카톡방에 붙여넣으세요.');
-                }).catch(() => {
-                    fallbackCopy(shareText);
-                });
-            } else {
-                fallbackCopy(shareText);
-            }
-        };
-
-        function fallbackCopy(text) {
-            const dummy = document.createElement('textarea');
-            dummy.value = text;
-            document.body.appendChild(dummy);
-            dummy.select();
-            try {
-                document.execCommand('copy');
-                showToast('📋 톡방 공유 안내 문구가 복사되었습니다!');
-            } catch (e) {
-                showToast('❌ 복사에 실패했습니다.');
-            }
-            document.body.removeChild(dummy);
-        }
-
-        window.switchTab = function(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById('tab-' + tabId);
-            if (target) target.classList.remove('hidden');
-
-            document.querySelectorAll('.sidebar-link').forEach(el => {
-                el.classList.remove('bg-emerald-100/70', 'text-ghibli-forest', 'font-semibold', 'shadow-xs');
-                el.classList.add('text-ghibli-textDark');
-            });
-            const activeNav = document.getElementById('nav-' + tabId);
-            if (activeNav) {
-                activeNav.classList.remove('text-ghibli-textDark');
-                activeNav.classList.add('bg-emerald-100/70', 'text-ghibli-forest', 'font-semibold', 'shadow-xs');
-            }
-
-            if (navHistory[navHistoryIndex] !== tabId) {
-                navHistory = navHistory.slice(0, navHistoryIndex + 1);
-                navHistory.push(tabId);
-                navHistoryIndex = navHistory.length - 1;
-            }
-            updateStepButtons();
-
-            if (window.innerWidth < 1024 && !sidebar.classList.contains('-translate-x-full')) {
-                toggleSidebar();
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            renderAllLists();
-        };
-
-        window.goPrevStep = function() {
-            if (navHistoryIndex > 0) {
-                navHistoryIndex--;
-                window.switchTab(navHistory[navHistoryIndex]);
-            }
-        };
-
-        window.goNextStep = function() {
-            if (navHistoryIndex < navHistory.length - 1) {
-                navHistoryIndex++;
-                window.switchTab(navHistory[navHistoryIndex]);
-            }
-        };
-
-        function updateStepButtons() {
-            const btnPrev = document.getElementById('btnPrevStep');
-            const btnNext = document.getElementById('btnNextStep');
-            if (btnPrev) btnPrev.disabled = navHistoryIndex <= 0;
-            if (btnNext) btnNext.disabled = navHistoryIndex >= navHistory.length - 1;
-        }
-
-        let selectedFormType = '휴가신청서';
-        let boardCategoryFilter = 'ALL';
-
-        window.toggleAccordion = function(id) {
-            const content = document.getElementById('acc-' + id);
-            const icon = document.getElementById('icon-' + id);
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            } else {
-                content.classList.add('hidden');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            }
-        };
-
-        let navHistory = ['dashboard'];
-        let navHistoryIndex = 0;
-
-        let pendingDocs = [
-            {
-                id: 'pend-1',
-                type: '휴가신청서',
-                title: '[휴가신청] 동계 숲속 온천 휴가 신청의 건',
-                author: '소피 사원',
-                date: '2026.11.16',
-                meta: '기간: 2026.11.25 ~ 2026.11.27 (3일간)',
-                content: '지브리 계곡 온천 마을에서 재충전 시간을 갖고자 연차 휴가를 신청합니다. 업무 인수인계는 하울 대리에게 완료했습니다.'
-            },
-            {
-                id: 'pend-2',
-                type: '지출결의서',
-                title: '[지출결의] 도토리 상점 겨울 다과회 허브티 구입 정산',
-                author: '하울 대리',
-                date: '2026.11.15',
-                meta: '금액: 145,000원 (법인카드)',
-                content: '부서 월간 숲속 다과회 진행을 위한 로즈힙 허브티 및 구운 밤 간식 구매 영수증 정산 건입니다.'
-            }
-        ];
-
-        let tempDrafts = [
-            {
-                id: 'temp-1',
-                type: '출장신청서',
-                title: '[출장신청] 바람의 언덕 지사 현장 점검 출장',
-                meta: '기간: 2026.12.02 ~ 2026.12.03 (1박 2일)',
-                approver: '치히로 팀장 → 가오나시 본부장',
-                content: '바람의 언덕 지사 풍력 발전 시설 정기 점검 및 현지 정령 팀 미팅 참석 예정입니다.',
-                savedAt: '2026.11.16 09:40'
-            }
-        ];
-
-        let sentDrafts = [
-            {
-                id: 'sent-1',
-                type: '품의서',
-                title: '[품의] 2026년도 연말 숲속 정원 조명 장식 설치 품의',
-                date: '2026.11.14',
-                meta: '예산: 320,000원',
-                approver: '치히로 팀장 → 가오나시 본부장',
-                status: '1차 승인완료 (2차 대기)',
-                content: '연말을 맞이하여 사내 정원 산책로에 따뜻한 반딧불이 LED 조명을 설치하고자 합니다.'
-            }
-        ];
-
-        let approvalBoxDocs = [
-            {
-                id: 'box-1',
-                type: '휴가신청서',
-                title: '[휴가신청] 가을 단풍 산책 반차 신청',
-                author: '치히로 팀장',
-                date: '2026.11.12',
-                processedAt: '2026.11.12 14:20',
-                meta: '기간: 2026.11.13 오후 반차',
-                content: '개인 사유로 오후 반차를 신청합니다.',
-                status: 'APPROVED',
-                rejectReason: ''
-            }
-        ];
-
-        let rejectedBoxDocs = [
-            {
-                id: 'rej-1',
-                type: '지출결의서',
-                title: '[지출결의] 마법 빗자루 수리비 청구 건',
-                author: '김숲속 사원',
-                date: '2026.11.10',
-                rejectedAt: '2026.11.11 10:05',
-                meta: '금액: 88,000원',
-                content: '배달 업무 중 손상된 빗자루 손잡이 수리 비용 청구입니다.',
-                rejectReason: '수리 업체 간이영수증 대신 세금계산서 또는 카드전표 첨부 후 재상신 바랍니다.'
-            }
-        ];
-
-        let boardPosts = [
-            {
-                id: 'post-1',
-                category: '공지사항',
-                title: '[공지] 동절기 숲속 사옥 난방 가동 및 허브티 라운지 운영 안내',
-                author: '토토로 총무팀',
-                date: '2026.11.16',
-                views: 42,
-                content: '안녕하세요, 숲속 마을 임직원 여러분!\n기온이 내려감에 따라 오늘부터 1층 휴게 라운지에 따뜻한 캐모마일과 로즈힙 허브티가 상시 비치됩니다. 건강 유의하시고 포근한 하루 보내세요 🌿',
-                comments: [
-                    { author: '치히로 팀장', text: '따뜻한 배려 감사합니다! 오후에 들러야겠어요 🍵', time: '1시간 전' }
-                ]
-            }
-        ];
-
-        let notifications = [
-            {
-                id: 'notif-1',
-                icon: '📥',
-                category: '결재요청',
-                title: '새로운 결재 요청이 도착했습니다.',
-                message: '소피 사원님이 [휴가신청] 동계 숲속 온천 휴가 신청의 건을 상신했습니다.',
-                time: '15분 전',
-                unread: true,
-                targetTab: 'approval'
-            },
-            {
-                id: 'notif-2',
-                icon: '🍂',
-                category: '반려안내',
-                title: '기안 문서가 반려되어 반려함으로 이동되었습니다.',
-                message: '[지출결의] 마법 빗자루 수리비 청구 건이 반려되었습니다. 사유를 확인 후 재기안해 주세요.',
-                time: '2시간 전',
-                unread: true,
-                targetTab: 'box-rejected'
-            }
-        ];
-
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
-        document.getElementById('sidebarClose').addEventListener('click', toggleSidebar);
-        sidebarOverlay.addEventListener('click', toggleSidebar);
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            sidebarOverlay.classList.toggle('hidden');
-        }
-
-        let isSidebarCollapsed = false;
-        window.toggleDesktopSidebar = function() {
-            isSidebarCollapsed = !isSidebarCollapsed;
-            const icon = document.getElementById('desktopToggleIcon');
-            const text = document.getElementById('desktopToggleText');
-            if (isSidebarCollapsed) {
-                sidebar.style.width = '4.5rem';
-                icon.className = 'fa-solid fa-angles-right';
-                if (text) text.style.display = 'none';
-                document.querySelectorAll('#sidebarNavContent span:not(.text-base):not([class*="bg-"])').forEach(el => {
-                    el.style.display = 'none';
-                });
-                showToast('◀ 사이드바를 접었습니다.');
-            } else {
-                sidebar.style.width = '17rem';
-                icon.className = 'fa-solid fa-angles-left';
-                if (text) text.style.display = 'inline';
-                document.querySelectorAll('#sidebarNavContent span').forEach(el => {
-                    el.style.display = '';
-                });
-                showToast('▶ 사이드바를 펼쳤습니다.');
-            }
-        };
-
-        window.openNewDraft = function() {
-            document.getElementById('editingTempId').value = '';
-            document.getElementById('draftTitle').value = '';
-            document.getElementById('draftMeta').value = '';
-            document.getElementById('draftContent').value = '';
-            window.selectFormType('휴가신청서');
-            window.switchTab('draft');
-        };
-
-        window.selectFormType = function(type) {
-            selectedFormType = type;
-            document.querySelectorAll('.form-type-btn').forEach(btn => {
-                if (btn.dataset.form === type) {
-                    btn.classList.add('border-ghibli-forest', 'bg-emerald-50/80');
-                    btn.classList.remove('border-ghibli-border', 'bg-white/70');
-                } else {
-                    btn.classList.remove('border-ghibli-forest', 'bg-emerald-50/80');
-                    btn.classList.add('border-ghibli-border', 'bg-white/70');
-                }
-            });
-            const metaLabel = document.getElementById('metaFieldLabel');
-            if (type === '휴가신청서') metaLabel.innerText = '희망 일자 / 기간';
-            else if (type === '지출결의서') metaLabel.innerText = '청구 금액 및 계좌';
-            else if (type === '품의서') metaLabel.innerText = '예산 금액 및 항목';
-            else metaLabel.innerText = '출장 일정 / 지역';
-        };
-
-        window.saveTempDraft = function() {
-            const title = document.getElementById('draftTitle').value.trim();
-            const meta = document.getElementById('draftMeta').value.trim();
-            const content = document.getElementById('draftContent').value.trim();
-            if (!title) {
-                showToast('⚠️ 문서 제목을 입력해주세요.');
-                return;
-            }
-            tempDrafts.unshift({
-                id: 'temp-' + Date.now(),
-                type: selectedFormType,
-                title: title,
-                meta: meta || '내용 참고',
-                approver: document.getElementById('draftApprover').value,
-                content: content,
-                savedAt: '방금 전'
-            });
-            showToast('🧺 임시 저장함에 안전하게 보관되었습니다.');
-            window.switchTab('temp-drafts');
-        };
-
-        window.loadTempDraft = function(id) {
-            const draft = tempDrafts.find(d => d.id === id);
-            if (!draft) return;
-            document.getElementById('editingTempId').value = draft.id;
-            document.getElementById('draftTitle').value = draft.title;
-            document.getElementById('draftMeta').value = draft.meta;
-            document.getElementById('draftContent').value = draft.content;
-            window.selectFormType(draft.type);
-            window.switchTab('draft');
-            showToast('✏️ 임시 저장된 문서를 불러왔습니다.');
-        };
-
-        window.deleteTempDraft = function(id) {
-            tempDrafts = tempDrafts.filter(d => d.id !== id);
-            renderAllLists();
-            showToast('🗑️ 임시 저장 문서가 삭제되었습니다.');
-        };
-
-        window.handleDraftSubmit = function(e) {
-            e.preventDefault();
-            const title = document.getElementById('draftTitle').value.trim();
-            const meta = document.getElementById('draftMeta').value.trim();
-            const content = document.getElementById('draftContent').value.trim();
-            const editingId = document.getElementById('editingTempId').value;
-
-            if (editingId) tempDrafts = tempDrafts.filter(d => d.id !== editingId);
-
-            sentDrafts.unshift({
-                id: 'sent-' + Date.now(),
-                type: selectedFormType,
-                title: title,
-                date: '방금 전',
-                meta: meta || '상세 내용 참고',
-                approver: document.getElementById('draftApprover').value,
-                status: '결재 대기 중',
-                content: content
-            });
-
-            showToast('🍃 결재가 성공적으로 상신되었습니다.');
-            window.switchTab('box-draft');
-        };
-
-        function renderAllLists() {
-            document.getElementById('sidebarPendingBadge').innerText = pendingDocs.length;
-            document.getElementById('dashPendingCount').innerText = pendingDocs.length + '건';
-            document.getElementById('bannerPendingCount').innerText = pendingDocs.length + '건';
-            document.getElementById('sidebarSentBadge').innerText = sentDrafts.length;
-            document.getElementById('dashSentCount').innerText = sentDrafts.length + '건';
-            document.getElementById('sidebarDraftBoxBadge').innerText = tempDrafts.length;
-            document.getElementById('sidebarBoxBadge').innerText = approvalBoxDocs.length;
-            document.getElementById('dashBoxCount').innerText = approvalBoxDocs.length + '건';
-            document.getElementById('sidebarRejectedBadge').innerText = rejectedBoxDocs.length;
-            document.getElementById('dashRejectedCount').innerText = rejectedBoxDocs.length + '건';
-            document.getElementById('sidebarTempBadge').innerText = tempDrafts.length;
-            
-            const unreadNotifs = notifications.filter(n => n.unread).length;
-            document.getElementById('sidebarNotifBadge').innerText = unreadNotifs;
-            document.getElementById('headerNotifBadge').innerText = unreadNotifs;
-            document.getElementById('bannerNotifCount').innerText = unreadNotifs + '건';
-
-            const dashList = document.getElementById('dashboardPendingList');
-            if (pendingDocs.length === 0) {
-                dashList.innerHTML = `<div class="p-6 text-center text-xs text-ghibli-textMuted">🌿 현재 대기 중인 결재 도토리가 없습니다.</div>`;
-            } else {
-                dashList.innerHTML = pendingDocs.slice(0, 3).map(doc => `
-                    <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-white/60 transition">
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shrink-0">⏳</div>
-                            <div>
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 bg-emerald-100 text-ghibli-forest rounded-full">${doc.type}</span>
-                                <h4 class="font-bold text-ghibli-brown text-sm sm:text-base mt-1 cursor-pointer hover:underline" onclick="openDetailModal('pending', '${doc.id}')">${doc.title}</h4>
-                                <p class="text-xs text-ghibli-textMuted mt-0.5">${doc.author} · ${doc.date}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="openDetailModal('pending', '${doc.id}')" class="px-3 py-1.5 bg-ghibli-forest text-white rounded-xl text-xs font-bold shadow-2xs hover:bg-[#3b6447]">검토</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const queueList = document.getElementById('approvalQueueList');
-            if (pendingDocs.length === 0) {
-                queueList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">🌿 모든 결재 대기 문서를 처리했습니다!</div>`;
-            } else {
-                queueList.innerHTML = pendingDocs.map(doc => `
-                    <div class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="flex items-start space-x-3.5">
-                            <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xl shrink-0">🌰</div>
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-xs font-bold px-2.5 py-0.5 bg-emerald-100 text-ghibli-forest rounded-full">${doc.type}</span>
-                                    <span class="text-xs text-ghibli-textMuted">기안자: ${doc.author}</span>
-                                </div>
-                                <h4 class="font-bold text-ghibli-brown text-base mt-1.5 cursor-pointer hover:underline" onclick="openDetailModal('pending', '${doc.id}')">${doc.title}</h4>
-                                <p class="text-xs text-ghibli-forest font-medium mt-1">${doc.meta}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2 self-end sm:self-center">
-                            <button onclick="approveDoc('${doc.id}')" class="px-4 py-2 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-xs font-bold shadow-xs transition">승인 🌻</button>
-                            <button onclick="rejectDocPrompt('${doc.id}')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition">반려 🍂</button>
-                            <button onclick="openDetailModal('pending', '${doc.id}')" class="px-3.5 py-2 bg-white/80 hover:bg-white border border-ghibli-border rounded-xl text-xs font-bold text-ghibli-brown">상세</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const tempList = document.getElementById('tempDraftList');
-            if (tempDrafts.length === 0) {
-                tempList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">🧺 임시 저장된 문서가 없습니다.</div>`;
-            } else {
-                tempList.innerHTML = tempDrafts.map(doc => `
-                    <div class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold px-2.5 py-0.5 bg-stone-200 text-stone-700 rounded-full">${doc.type}</span>
-                                <span class="text-xs text-ghibli-textMuted">저장시각: ${doc.savedAt}</span>
-                            </div>
-                            <h4 class="font-bold text-ghibli-brown text-base mt-1.5">${doc.title}</h4>
-                            <p class="text-xs text-ghibli-textMuted mt-0.5">${doc.meta}</p>
-                        </div>
-                        <div class="flex items-center space-x-2 self-end sm:self-center">
-                            <button onclick="loadTempDraft('${doc.id}')" class="px-4 py-2 bg-ghibli-forest hover:bg-[#3b6447] text-white rounded-xl text-xs font-bold shadow-xs transition">이어서 작성 ✏️</button>
-                            <button onclick="deleteTempDraft('${doc.id}')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition">삭제 🗑️</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const sentList = document.getElementById('sentDraftList');
-            if (sentDrafts.length === 0) {
-                sentList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">📤 상신한 기안 문서가 없습니다.</div>`;
-            } else {
-                sentList.innerHTML = sentDrafts.map(doc => `
-                    <div class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">${doc.type}</span>
-                                <span class="text-xs font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">${doc.status}</span>
-                            </div>
-                            <h4 class="font-bold text-ghibli-brown text-base mt-1.5">${doc.title}</h4>
-                            <p class="text-xs text-ghibli-textMuted mt-0.5">결재선: ${doc.approver} · 상신일: ${doc.date}</p>
-                        </div>
-                        <button onclick="openDetailModal('sent', '${doc.id}')" class="px-4 py-2 bg-white/80 hover:bg-white border border-ghibli-border rounded-xl text-xs font-bold text-ghibli-brown self-start sm:self-center">상세조회</button>
-                    </div>
-                `).join('');
-            }
-
-            const approvalBoxList = document.getElementById('approvalBoxList');
-            if (approvalBoxDocs.length === 0) {
-                approvalBoxList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">🌰 완료된 승인 문서가 없습니다.</div>`;
-            } else {
-                approvalBoxList.innerHTML = approvalBoxDocs.map(doc => `
-                    <div class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold px-2.5 py-0.5 bg-emerald-100 text-ghibli-forest rounded-full">${doc.type}</span>
-                                <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">승인완료 🌻</span>
-                            </div>
-                            <h4 class="font-bold text-ghibli-brown text-base mt-1.5">${doc.title}</h4>
-                            <p class="text-xs text-ghibli-textMuted mt-0.5">기안자: ${doc.author} · 완료시각: ${doc.processedAt}</p>
-                        </div>
-                        <div class="flex items-center space-x-2 self-end sm:self-center">
-                            <button onclick="openDetailModal('approved', '${doc.id}')" class="px-3.5 py-2 bg-white/80 hover:bg-white border border-ghibli-border rounded-xl text-xs font-bold text-ghibli-brown">상세보기</button>
-                            <button onclick="deleteApprovedDoc('${doc.id}')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition">삭제 🗑️</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const rejectedList = document.getElementById('rejectedBoxList');
-            if (rejectedBoxDocs.length === 0) {
-                rejectedList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">🍂 반려된 문서가 없습니다.</div>`;
-            } else {
-                rejectedList.innerHTML = rejectedBoxDocs.map(doc => `
-                    <div class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs font-bold px-2.5 py-0.5 bg-rose-100 text-rose-700 rounded-full">${doc.type}</span>
-                                <span class="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">반려됨 🍂</span>
-                            </div>
-                            <span class="text-xs text-ghibli-textMuted">${doc.rejectedAt}</span>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-ghibli-brown text-base">${doc.title}</h4>
-                            <p class="text-xs text-rose-800 bg-rose-50 p-3 rounded-2xl border border-rose-200 mt-2"><strong>반려 사유:</strong> ${doc.rejectReason}</p>
-                        </div>
-                        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-ghibli-border">
-                            <button onclick="redraftRejectedDoc('${doc.id}')" class="px-4 py-2 bg-ghibli-terracotta hover:bg-[#c26243] text-white rounded-xl text-xs font-bold shadow-xs transition">수정·재기안 ✍️</button>
-                            <button onclick="deleteRejectedDoc('${doc.id}')" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition">삭제 🗑️</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const notifList = document.getElementById('notificationList');
-            if (notifications.length === 0) {
-                notifList.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">🔔 도착한 알림이 없습니다.</div>`;
-            } else {
-                notifList.innerHTML = notifications.map(n => `
-                    <div onclick="clickNotification('${n.id}', '${n.targetTab}')" class="frosted-card p-4 sm:p-5 rounded-3xl border border-ghibli-border shadow-sm flex items-start space-x-3.5 cursor-pointer hover:bg-white/80 transition ${n.unread ? 'bg-amber-50/40 border-amber-200' : ''}">
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-ghibli-forest flex items-center justify-center text-lg shrink-0">${n.icon}</div>
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-ghibli-forest">${n.category}</span>
-                                <span class="text-[11px] text-ghibli-textMuted">${n.time}</span>
-                            </div>
-                            <h4 class="font-bold text-ghibli-brown text-sm sm:text-base mt-1">${n.title}</h4>
-                            <p class="text-xs text-ghibli-textDark mt-0.5 leading-relaxed">${n.message}</p>
-                        </div>
-                        ${n.unread ? '<span class="w-2.5 h-2.5 rounded-full bg-ghibli-terracotta mt-1 shrink-0"></span>' : ''}
-                    </div>
-                `).join('');
-            }
-
-            renderBoardPosts();
-        }
-
-        window.setBoardCategory = function(cat) {
-            boardCategoryFilter = cat;
-            document.querySelectorAll('.board-cat-btn').forEach(btn => {
-                if (btn.id === 'board-cat-' + cat) {
-                    btn.classList.remove('bg-white/80', 'text-ghibli-textDark');
-                    btn.classList.add('bg-ghibli-forest', 'text-white');
-                } else {
-                    btn.classList.remove('bg-ghibli-forest', 'text-white');
-                    btn.classList.add('bg-white/80', 'text-ghibli-textDark');
-                }
-            });
-            renderBoardPosts();
-        };
-
-        function renderBoardPosts() {
-            const list = document.getElementById('boardPostList');
-            const filtered = boardCategoryFilter === 'ALL' ? boardPosts : boardPosts.filter(p => p.category === boardCategoryFilter);
-            document.getElementById('sidebarBoardBadge').innerText = boardPosts.length;
-            if (filtered.length === 0) {
-                list.innerHTML = `<div class="frosted-card p-8 rounded-3xl text-center text-sm text-ghibli-textMuted">📋 해당 분류에 게시글이 없습니다.</div>`;
-                return;
-            }
-            list.innerHTML = filtered.map(post => `
-                <div onclick="openBoardDetail('${post.id}')" class="frosted-card p-5 rounded-3xl border border-ghibli-border shadow-sm hover:shadow-md transition cursor-pointer space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full">${post.category}</span>
-                        <span class="text-xs text-ghibli-textMuted">${post.date} · 조회 ${post.views}</span>
-                    </div>
-                    <h4 class="font-bold text-ghibli-brown text-base ghibli-title">${post.title}</h4>
-                    <p class="text-xs text-ghibli-textMuted line-clamp-1">${post.content}</p>
-                    <div class="flex items-center justify-between pt-2 border-t border-ghibli-border text-xs text-ghibli-textMuted">
-                        <span>작성자: <strong class="text-ghibli-brown">${post.author}</strong></span>
-                        <span class="flex items-center space-x-1">
-                            <i class="fa-solid fa-comment text-[11px]"></i>
-                            <span>${post.comments.length}</span>
-                        </span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.openBoardWriteModal = function() { document.getElementById('boardWriteModal').classList.remove('hidden'); };
-        window.closeBoardWriteModal = function() { document.getElementById('boardWriteModal').classList.add('hidden'); };
-
-        window.handleBoardSubmit = function(e) {
-            e.preventDefault();
-            const cat = document.getElementById('boardWriteCategory').value;
-            const title = document.getElementById('boardWriteTitle').value.trim();
-            const content = document.getElementById('boardWriteContent').value.trim();
-
-            boardPosts.unshift({
-                id: 'post-' + Date.now(),
-                category: cat,
-                title: title,
-                author: currentUserName,
-                date: '방금 전',
-                views: 1,
-                content: content,
-                comments: []
-            });
-
-            closeBoardWriteModal();
-            renderAllLists();
-            showToast('🌿 새 게시글이 등록되었습니다.');
-        };
-
-        let currentBoardPostId = null;
-        window.openBoardDetail = function(postId) {
-            const post = boardPosts.find(p => p.id === postId);
-            if (!post) return;
-            currentBoardPostId = postId;
-
-            document.getElementById('boardModalCat').innerText = post.category;
-            document.getElementById('boardModalTitle').innerText = post.title;
-            document.getElementById('boardModalMeta').innerText = `${post.author} · ${post.date} · 조회수 ${post.views}`;
-            document.getElementById('boardModalContent').innerText = post.content;
-            document.getElementById('boardModalPostId').value = postId;
-
-            const commentsList = document.getElementById('boardModalCommentsList');
-            document.getElementById('boardModalCommentCount').innerText = post.comments.length;
-
-            if (post.comments.length === 0) {
-                commentsList.innerHTML = `<div class="text-xs text-ghibli-textMuted italic py-1">첫 번째 따뜻한 댓글을 남겨보세요!</div>`;
-            } else {
-                commentsList.innerHTML = post.comments.map(c => `
-                    <div class="bg-white/80 p-2.5 rounded-xl border border-ghibli-border text-xs space-y-1">
-                        <div class="flex items-center justify-between font-bold text-ghibli-brown">
-                            <span>${c.author}</span>
-                            <span class="text-[10px] text-ghibli-textMuted">${c.time}</span>
-                        </div>
-                        <p class="text-ghibli-textDark">${c.text}</p>
-                    </div>
-                `).join('');
-            }
-            document.getElementById('boardDetailModal').classList.remove('hidden');
-        };
-
-        window.closeBoardDetailModal = function() { document.getElementById('boardDetailModal').classList.add('hidden'); };
-
-        window.handleAddComment = function(e) {
-            e.preventDefault();
-            const input = document.getElementById('boardCommentInput');
-            const text = input.value.trim();
-            if (!text || !currentBoardPostId) return;
-
-            const post = boardPosts.find(p => p.id === currentBoardPostId);
-            if (post) {
-                post.comments.push({ author: currentUserName, text: text, time: '방금 전' });
-                input.value = '';
-                openBoardDetail(currentBoardPostId);
-                renderAllLists();
-                showToast('💬 댓글이 등록되었습니다.');
-            }
-        };
-
-        window.openDetailModal = function(type, id) {
-            let doc = null;
-            if (type === 'pending') doc = pendingDocs.find(d => d.id === id);
-            else if (type === 'sent') doc = sentDrafts.find(d => d.id === id);
-            else if (type === 'approved') doc = approvalBoxDocs.find(d => d.id === id);
-
-            if (!doc) return;
-
-            document.getElementById('modalTypeBadge').innerText = doc.type;
-            document.getElementById('modalTitle').innerText = doc.title;
-            document.getElementById('modalAuthor').innerText = doc.author || currentUserName;
-            document.getElementById('modalDate').innerText = doc.date || doc.processedAt || '방금 전';
-            document.getElementById('modalMetaInfo').innerText = doc.meta || '';
-            document.getElementById('modalContentDesc').innerText = doc.content || '내용이 없습니다.';
-
-            const statusBadge = document.getElementById('modalStatusBadge');
-            const rejectDisp = document.getElementById('modalRejectReasonDisplay');
-            const rejectInputBox = document.getElementById('modalRejectInputBox');
-            const footer = document.getElementById('modalFooterActions');
-
-            rejectDisp.classList.add('hidden');
-            rejectInputBox.classList.add('hidden');
-
-            if (type === 'pending') {
-                statusBadge.innerText = '결재 대기 중';
-                statusBadge.className = 'text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full';
-                footer.innerHTML = `
-                    <button onclick="approveDoc('${doc.id}'); closeDetailModal();" class="px-4 py-2 bg-ghibli-forest text-white rounded-xl text-xs font-bold">승인 🌻</button>
-                    <button onclick="rejectDocPromptInModal('${doc.id}')" class="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold">반려 🍂</button>
-                    <button onclick="closeDetailModal()" class="px-4 py-2 bg-ghibli-brown text-white rounded-xl text-xs font-bold">닫기</button>
-                `;
-            } else if (type === 'sent') {
-                statusBadge.innerText = doc.status;
-                statusBadge.className = 'text-xs font-bold px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full';
-                footer.innerHTML = `<button onclick="closeDetailModal()" class="px-4 py-2 bg-ghibli-brown text-white rounded-xl text-xs font-bold">닫기</button>`;
-            } else if (type === 'approved') {
-                statusBadge.innerText = '승인 완료 🌻';
-                statusBadge.className = 'text-xs font-bold px-2.5 py-1 bg-emerald-100 text-ghibli-forest rounded-full';
-                footer.innerHTML = `
-                    <button onclick="deleteApprovedDoc('${doc.id}'); closeDetailModal();" class="px-4 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold">삭제 🗑️</button>
-                    <button onclick="closeDetailModal()" class="px-4 py-2 bg-ghibli-brown text-white rounded-xl text-xs font-bold">닫기</button>
-                `;
-            }
-            document.getElementById('detailModal').classList.remove('hidden');
-        };
-
-        window.closeDetailModal = function() { document.getElementById('detailModal').classList.add('hidden'); };
-
-        window.approveDoc = function(id) {
-            const idx = pendingDocs.findIndex(d => d.id === id);
-            if (idx === -1) return;
-            const doc = pendingDocs.splice(idx, 1)[0];
-            approvalBoxDocs.unshift({ ...doc, processedAt: '방금 전', status: 'APPROVED', rejectReason: '' });
-            renderAllLists();
-            showToast('🌻 결재가 승인되어 결재함으로 이동되었습니다.');
-        };
-
-        window.rejectDocPrompt = function(id) {
-            const reason = prompt("🍂 반려 사유를 입력해주세요:", "증빙 서류 보완 필요");
-            if (reason === null) return;
-            executeReject(id, reason);
-        };
-
-        window.rejectDocPromptInModal = function(id) {
-            document.getElementById('modalRejectInputBox').classList.remove('hidden');
-            document.getElementById('modalFooterActions').innerHTML = `
-                <button onclick="confirmRejectInModal('${id}')" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold">반려 최종 확정 🍂</button>
-                <button onclick="closeDetailModal()" class="px-4 py-2 bg-ghibli-brown text-white rounded-xl text-xs font-bold">취소</button>
-            `;
-        };
-
-        window.confirmRejectInModal = function(id) {
-            const reason = document.getElementById('modalRejectInput').value.trim() || '사유 미기재 반려';
-            executeReject(id, reason);
-            closeDetailModal();
-        };
-
-        function executeReject(id, reason) {
-            const idx = pendingDocs.findIndex(d => d.id === id);
-            if (idx === -1) return;
-            const doc = pendingDocs.splice(idx, 1)[0];
-            rejectedBoxDocs.unshift({ ...doc, rejectedAt: '방금 전', rejectReason: reason });
-            renderAllLists();
-            showToast('🍂 결재가 반려되어 반려함으로 이동되었습니다.');
-        }
-
-        window.deleteApprovedDoc = function(id) {
-            approvalBoxDocs = approvalBoxDocs.filter(d => d.id !== id);
-            renderAllLists();
-            showToast('🗑️ 결재함 문서가 삭제되었습니다.');
-        };
-
-        window.deleteRejectedDoc = function(id) {
-            rejectedBoxDocs = rejectedBoxDocs.filter(d => d.id !== id);
-            renderAllLists();
-            showToast('🗑️ 반려함 문서가 삭제되었습니다.');
-        };
-
-        window.redraftRejectedDoc = function(id) {
-            const doc = rejectedBoxDocs.find(d => d.id === id);
-            if (!doc) return;
-            rejectedBoxDocs = rejectedBoxDocs.filter(d => d.id !== id);
-            document.getElementById('draftTitle').value = doc.title + ' (재기안)';
-            document.getElementById('draftMeta').value = doc.meta;
-            document.getElementById('draftContent').value = doc.content;
-            window.selectFormType(doc.type);
-            window.switchTab('draft');
-            showToast('✍️ 반려된 문서를 불러와 재기안 모드로 전환했습니다.');
-        };
-
-        window.markAllNotificationsRead = function() {
-            notifications.forEach(n => n.unread = false);
-            renderAllLists();
-            showToast('✓ 모든 알림을 읽음 처리했습니다.');
-        };
-
-        window.clearAllNotifications = function() {
-            notifications = [];
-            renderAllLists();
-            showToast('🗑️ 알림함이 비워졌습니다.');
-        };
-
-        window.clickNotification = function(notifId, targetTab) {
-            const notif = notifications.find(n => n.id === notifId);
-            if (notif) notif.unread = false;
-            if (targetTab) window.switchTab(targetTab);
-            renderAllLists();
-        };
-
-        function showToast(message) {
-            const toast = document.getElementById('toastBox');
-            document.getElementById('toastMessage').innerText = message;
-            toast.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-24', 'opacity-0');
-            }, 3500);
-        }
+</body>
+</html>
