@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -30,7 +29,7 @@
             display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
 
-        /* 로그인 오버레이 모달 (버튼 클릭 시 정상 작동) */
+        /* 로그인 오버레이 모달 */
         .login-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(26, 37, 44, 0.75); backdrop-filter: blur(6px);
@@ -127,6 +126,18 @@
         .doc-title { font-size: 12px; font-weight: bold; color: var(--text-main); margin-bottom: 2px; }
         .doc-sub { font-size: 10px; color: var(--text-sub); }
 
+        /* 결재선 정령 칩 스타일 */
+        .spirit-line {
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+            background: #F4F7F4; padding: 10px; border-radius: 12px; border: 1px solid var(--border-color);
+        }
+        .spirit-badge {
+            background: #FFF; border: 1px solid var(--sage-green); padding: 4px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 500; color: var(--forest-dark);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .spirit-arrow { font-size: 11px; color: var(--sage-green); font-weight: bold; }
+
         .btn-primary { background: var(--forest-green); color: #FFF; border: none; padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 11px; font-weight: bold; color: var(--forest-dark); margin-bottom: 4px; }
@@ -147,7 +158,7 @@
 <body>
 
     <div class="mobile-frame">
-        <!-- 초기 입장 모달 (버튼 클릭 시 즉시 닫히고 본 화면 진입) -->
+        <!-- 초기 입장 모달 -->
         <div id="loginModal" class="login-overlay">
             <div class="login-card">
                 <div class="login-icon">🌳</div>
@@ -243,15 +254,15 @@
                     </div>
                     <div class="doc-item" onclick="switchScreen('waiting')">
                         <div>
-                            <div class="doc-title">[휴가신청서] 연차 휴가 사용의 건</div>
-                            <div class="doc-sub">기안자: 김숲속 사원 · 2026-11-16</div>
+                            <div class="doc-title">[휴가신청서] 도토리 숲 정기 휴양의 건</div>
+                            <div class="doc-sub">기안자: 👻 가오나시 주임 · 2026-11-16</div>
                         </div>
                         <span class="status-tag tag-need">대기중</span>
                     </div>
                     <div class="doc-item" onclick="switchScreen('waiting')">
                         <div>
-                            <div class="doc-title">[지출결의서] 3지점 소모품 구입 비용</div>
-                            <div class="doc-sub">기안자: 이공무 부장 · 2026-11-15</div>
+                            <div class="doc-title">[지출결의서] 고양이 버스 정기 점검 비용</div>
+                            <div class="doc-sub">기안자: 🐈‍⬛ 지지 대리 · 2026-11-15</div>
                         </div>
                         <span class="status-tag tag-need">대기중</span>
                     </div>
@@ -264,22 +275,22 @@
                     <div class="section-header"><h3>⏳ 결재 대기 문서 목록 (2건)</h3></div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">[휴가신청서] 연차 휴가 사용의 건</div>
-                            <div class="doc-sub">기간: 2026-11-20 ~ 11-21 (2일)</div>
+                            <div class="doc-title">[휴가신청서] 도토리 숲 정기 휴양의 건</div>
+                            <div class="doc-sub">기안: 👻 가오나시 주임 · 기간: 2026-11-20 ~ 11-21</div>
                         </div>
                         <button class="action-chip" style="background:var(--forest-green); color:#FFF;" onclick="approveDoc(this)">승인 🌻</button>
                     </div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">[지출결의서] 3지점 소모품 구입 비용</div>
-                            <div class="doc-sub">금액: 150,000원</div>
+                            <div class="doc-title">[지출결의서] 고양이 버스 정기 점검 비용</div>
+                            <div class="doc-sub">기안: 🐈‍⬛ 지지 대리 · 금액: 150,000원</div>
                         </div>
                         <button class="action-chip" style="background:var(--forest-green); color:#FFF;" onclick="approveDoc(this)">승인 🌻</button>
                     </div>
                 </div>
             </div>
 
-            <!-- [3] 새 기안 작성 -->
+            <!-- [3] 새 기안 작성 (지브리 캐릭터 결재선 복원) -->
             <div id="screen-draft" class="screen-view">
                 <div class="section-box">
                     <div class="section-header"><h3>✨ 새 도토리 기안 작성</h3></div>
@@ -293,15 +304,21 @@
                     </div>
                     <div class="form-group">
                         <label>기안 제목</label>
-                        <input type="text" id="draftTitle" placeholder="제목을 입력하세요">
+                        <input type="text" id="draftTitle" placeholder="제목을 입력하세요 (예: 마녀의 빗자루 수리비 청구)">
                     </div>
                     <div class="form-group">
-                        <label>결재선 지정 (정령들)</label>
-                        <input type="text" value="이병래 부장 (참조) → 숲속 관리자 (승인)" readonly>
+                        <label>결재선 지정 (숲속 정령들)</label>
+                        <div class="spirit-line" id="spiritLine">
+                            <span class="spirit-badge">👻 가오나시 (검토)</span>
+                            <span class="spirit-arrow">→</span>
+                            <span class="spirit-badge">🪄 하울 팀장 (합의)</span>
+                            <span class="spirit-arrow">→</span>
+                            <span class="spirit-badge">🌳 토토로 본부장 (최종승인)</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>상세 내용</label>
-                        <textarea rows="4" placeholder="내용을 입력하세요"></textarea>
+                        <textarea rows="4" placeholder="결재 올릴 상세 내용을 입력하세요"></textarea>
                     </div>
                     <button class="btn-primary" onclick="submitDraft()">결재 상신하기 🚀</button>
                 </div>
@@ -313,8 +330,8 @@
                     <div class="section-header"><h3>🌻 결재함 (승인 완료)</h3></div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">[휴가신청서] 하계 휴가 사용의 건</div>
-                            <div class="doc-sub">처리일시: 2026-11-10 · 승인완료</div>
+                            <div class="doc-title">[휴가신청서] 하울의 움직이는 성 워크숍의 건</div>
+                            <div class="doc-sub">최종승인: 🌳 토토로 본부장 · 2026-11-10</div>
                         </div>
                         <span class="status-tag tag-done">승인됨</span>
                     </div>
@@ -327,8 +344,8 @@
                     <div class="section-header"><h3>🍂 반려된 문서함</h3></div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">[지출결의서] 비품 구매 건 (반려)</div>
-                            <div class="doc-sub">반려사유: 영수증 증빙 서류 보완 필요</div>
+                            <div class="doc-title">[지출결의서] 황금 사금 구매 품의 (반려)</div>
+                            <div class="doc-sub">반려자: 👻 가오나시 · 사유: 증빙 영수증 보완 필요</div>
                         </div>
                         <span class="status-tag tag-need" onclick="switchScreen('draft')">보완·재기안 ✍️</span>
                     </div>
@@ -341,8 +358,8 @@
                     <div class="section-header"><h3>⛵ 진행 중인 기안 문서</h3></div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">[일반기안] 현장 관리감독자 교육 실시의 건</div>
-                            <div class="doc-sub">결재 진행중 (2/3단계)</div>
+                            <div class="doc-title">[일반기안] 숲속 숯검댕이 정령 간식 지원의 건</div>
+                            <div class="doc-sub">현재 결재자: 🪄 하울 팀장 (2/3단계 진행중)</div>
                         </div>
                         <span class="status-tag tag-prog">대기중</span>
                     </div>
@@ -355,13 +372,13 @@
                     <div class="section-header"><h3>🔔 숲속 알림함</h3></div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">새로운 결재 대기 문서가 도착했습니다.</div>
-                            <div class="doc-sub">10분 전 · [휴가신청서]</div>
+                            <div class="doc-title">👻 가오나시 주임님이 결재 문서를 올렸습니다.</div>
+                            <div class="doc-sub">10분 전 · [휴가신청서] 도토리 숲 정기 휴양의 건</div>
                         </div>
                     </div>
                     <div class="doc-item">
                         <div>
-                            <div class="doc-title">상신한 기안이 1단계 승인되었습니다.</div>
+                            <div class="doc-title">🌳 토토로 본부장님이 기안을 최종 승인했습니다.</div>
                             <div class="doc-sub">1시간 전 · [일반기안]</div>
                         </div>
                     </div>
