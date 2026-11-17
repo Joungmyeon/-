@@ -118,7 +118,6 @@
                         <h2 class="font-bold text-emerald-900 text-sm mb-0.5">🌿 새 전자결재 작성</h2>
                         <p class="text-xs text-emerald-700">기안 상신 시 자동으로 결재대기함으로 이동합니다.</p>
                     </div>
-                    <!-- 수정된 결재선 표기 -->
                     <span class="text-[10px] bg-emerald-700 text-white px-2 py-1 rounded-full shrink-0 font-medium">정면➔가오나시➔토토로 유경</span>
                 </div>
                 
@@ -174,7 +173,7 @@
         </main>
 
         <footer class="bg-gray-50 border-t py-2 px-4 text-center text-xs text-gray-500 z-10">
-            Ghibli Forest Workflow System v7.1
+            Ghibli Forest Workflow System v7.2
         </footer>
     </div>
 
@@ -215,7 +214,7 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'ghibli_approval_drawer_v3';
+        const STORAGE_KEY = 'ghibli_approval_drawer_v4';
         const tabLabels = {
             draft: '✍️ 기안하기',
             waiting: '⏳ 결재대기',
@@ -435,8 +434,9 @@
             });
 
             documents.forEach(doc => {
-                const isApproved = doc.step === 'approved';
-                const deleteBtnHtml = isApproved
+                // 최종승인 또는 반려함일 때만 삭제 버튼 표시
+                const canDelete = (doc.step === 'approved' || doc.step === 'rejected');
+                const deleteBtnHtml = canDelete
                     ? `<button type="button" onclick="deleteDocument(${doc.id}, event)" class="ml-2 px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[10px] font-bold">삭제</button>`
                     : '';
 
