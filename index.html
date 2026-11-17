@@ -83,13 +83,13 @@
 
             <!-- 2. 결재대기 -->
             <section id="view-waiting" class="view-section hidden space-y-3">
-                <h2 class="font-bold text-gray-800 text-sm">⏳ 결재 대기 문서 목록 (1차: 가오나시 본부장)</h2>
+                <h2 class="font-bold text-gray-800 text-sm">⏳ 결재 대기 문서 목록</h2>
                 <div id="list-waiting" class="space-y-2"></div>
             </section>
 
             <!-- 3. 진행 중 기안 -->
             <section id="view-progress" class="view-section hidden space-y-3">
-                <h2 class="font-bold text-gray-800 text-sm">🔄 진행 중 기안 목록 (최종: 토토로 유경)</h2>
+                <h2 class="font-bold text-gray-800 text-sm">🔄 진행 중 기안 목록</h2>
                 <div id="list-progress" class="space-y-2"></div>
             </section>
 
@@ -114,7 +114,7 @@
         </main>
 
         <footer class="bg-gray-50 border-t py-2 px-4 text-center text-xs text-gray-500 z-10">
-            Ghibli Forest Workflow System (GitHub Edition)
+            Ghibli Forest Workflow System v5.1
         </footer>
     </div>
 
@@ -155,7 +155,7 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'ghibli_approval_github_v1';
+        const STORAGE_KEY = 'ghibli_approval_github_v2';
         const approvers = ['가오나시 본부장', '토토로 유경'];
 
         let documents = [];
@@ -189,6 +189,7 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
         }
 
+        // 탭 전환 함수 명시적 정의
         function switchTab(tabName) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => {
@@ -196,10 +197,16 @@
                 el.classList.add('bg-white', 'text-emerald-800');
             });
 
-            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            const targetView = document.getElementById(`view-${tabName}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+            
             const activeBtn = document.getElementById(`tab-${tabName}`);
-            activeBtn.classList.remove('bg-white', 'text-emerald-800');
-            activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm');
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-emerald-800');
+                activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm');
+            }
 
             renderLists();
         }
@@ -249,7 +256,9 @@
                 rejected: document.getElementById('list-rejected')
             };
 
-            Object.values(containers).forEach(el => el.innerHTML = '');
+            Object.values(containers).forEach(el => {
+                if (el) el.innerHTML = '';
+            });
 
             documents.forEach(doc => {
                 const isApproved = doc.step === 'approved';
@@ -274,17 +283,17 @@
                     </div>
                 `;
 
-                if (doc.step === 'waiting') containers.waiting.innerHTML += cardHtml;
-                else if (doc.step === 'progress') containers.progress.innerHTML += cardHtml;
+                if (doc.step === 'waiting' && containers.waiting) containers.waiting.innerHTML += cardHtml;
+                else if (doc.step === 'progress' && containers.progress) containers.progress.innerHTML += cardHtml;
                 else if (doc.step === 'approved') {
-                    containers.approved.innerHTML += cardHtml;
-                    containers.storage.innerHTML += cardHtml;
+                    if (containers.approved) containers.approved.innerHTML += cardHtml;
+                    if (containers.storage) containers.storage.innerHTML += cardHtml;
                 }
-                else if (doc.step === 'rejected') containers.rejected.innerHTML += cardHtml;
+                else if (doc.step === 'rejected' && containers.rejected) containers.rejected.innerHTML += cardHtml;
             });
 
             Object.entries(containers).forEach(([key, el]) => {
-                if (el.innerHTML === '') {
+                if (el && el.innerHTML === '') {
                     el.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">표시할 문서가 없습니다.</div>`;
                 }
             });
@@ -400,6 +409,7 @@
             renderLists();
         }
 
+        // 초기 실행
         renderLists();
     </script>
 </body>
