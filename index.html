@@ -3,8 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>지브리 숲 전자결재 시스템</title>
+    <title>지브리 숲 실시간 전자결재 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK (v10 모듈러) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, update, remove, onValue, push, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // ==========================================
+        // 🔧 방금 확인하신 본인의 설정값이 적용된 코드입니다!
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR0HegBRSAShLqEtj4F2ZSLpSCzJxSKUE",
+            authDomain: "enrmstorms.firebaseapp.com",
+            databaseURL: "https://enrmstorms-default-rtdb.firebaseio.com", // 필요시 본인 DB URL 확인
+            projectId: "enrmstorms",
+            storageBucket: "enrmstorms.firebasestorage.app",
+            messagingSenderId: "647771955681",
+            appId: "1:647771955681:web:e97528c137d8fc4f732a0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 전역으로 사용할 수 있게 window에 등록
+        window.dbRef = ref;
+        window.dbGet = get;
+        window.dbSet = set;
+        window.dbUpdate = update;
+        window.dbRemove = remove;
+        window.dbOnValue = onValue;
+        window.dbPush = push;
+        window.dbChild = child;
+        window.database = db;
+        
+        // 파이어베이스 연결 후 초기 로드 트리거 발생
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -87,7 +123,7 @@
                     </svg>
                 </button>
                 <div class="truncate">
-                    <h1 class="font-bold text-sm leading-tight truncate">지브리 숲 전자결재</h1>
+                    <h1 class="font-bold text-sm leading-tight truncate">지브리 숲 실시간 결재</h1>
                     <span id="current-tab-label" class="text-[11px] text-emerald-200 block truncate">✍️ 기안하기</span>
                 </div>
             </div>
@@ -116,7 +152,7 @@
                 <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center justify-between">
                     <div>
                         <h2 class="font-bold text-emerald-900 text-sm mb-0.5">🌿 새 전자결재 작성</h2>
-                        <p class="text-xs text-emerald-700">기안 상신 시 자동으로 결재대기함으로 이동합니다.</p>
+                        <p class="text-xs text-emerald-700">상신 시 실시간 서버에 저장되어 카톡 상대방과 동기화됩니다.</p>
                     </div>
                     <span class="text-[10px] bg-emerald-700 text-white px-2 py-1 rounded-full shrink-0 font-medium">정면➔가오나시➔토토로 유경</span>
                 </div>
@@ -173,7 +209,7 @@
         </main>
 
         <footer class="bg-gray-50 border-t py-2 px-4 text-center text-xs text-gray-500 z-10">
-            Ghibli Forest Workflow System v7.2
+            Ghibli Forest Realtime System v8.1
         </footer>
     </div>
 
@@ -214,7 +250,6 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'ghibli_approval_drawer_v4';
         const tabLabels = {
             draft: '✍️ 기안하기',
             waiting: '⏳ 결재대기',
@@ -224,8 +259,35 @@
             rejected: '❌ 반려함'
         };
 
-        let lastFetchedDateStr = '';
+        let documents = [];
+        let currentOpenDocId = null;
 
+        window.addEventListener('firebase-ready', () => {
+            initRealtimeSync();
+        });
+
+        function initRealtimeSync() {
+            const docsRef = window.dbRef(window.database, 'ghibli_docs');
+            window.dbOnValue(docsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    documents = Object.keys(data).map(key => ({
+                        firebaseKey: key,
+                        ...data[key]
+                    }));
+                    documents.sort((a, b) => b.id - a.id);
+                } else {
+                    documents = [];
+                }
+                renderLists();
+                
+                if (currentOpenDocId) {
+                    openModal(currentOpenDocId, true);
+                }
+            });
+        }
+
+        let lastFetchedDateStr = '';
         function updateHeaderDate() {
             const now = new Date();
             const month = now.getMonth() + 1;
@@ -251,17 +313,14 @@
             try {
                 const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
                 const weatherData = await weatherRes.json();
-
                 if (weatherData && weatherData.current_weather) {
                     const temp = Math.round(weatherData.current_weather.temperature);
                     const code = weatherData.current_weather.weathercode;
                     const visual = getWeatherVisual(code);
-
                     document.getElementById('weather-icon').innerText = visual.icon;
                     document.getElementById('weather-temp').innerText = `${temp}°C`;
                     document.getElementById('weather-desc').innerText = visual.text;
                 }
-
                 const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`);
                 const geoData = await geoRes.json();
                 const city = geoData.city || geoData.locality || geoData.principalSubdivision || '현 위치';
@@ -273,19 +332,14 @@
 
         function initLocationAndWeather(forceRefresh = false) {
             const todayKey = updateHeaderDate();
-            if (forceRefresh) {
-                document.getElementById('weather-desc').innerText = '갱신중';
-            }
+            if (forceRefresh) document.getElementById('weather-desc').innerText = '갱신중';
             lastFetchedDateStr = todayKey;
-
             const fallbackLat = 36.7898;
             const fallbackLon = 127.0018;
 
             if ('geolocation' in navigator) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        fetchWeatherAndCity(pos.coords.latitude, pos.coords.longitude);
-                    },
+                    (pos) => fetchWeatherAndCity(pos.coords.latitude, pos.coords.longitude),
                     () => {
                         document.getElementById('location-name').innerText = '아산시(기본)';
                         fetchWeatherAndCity(fallbackLat, fallbackLon);
@@ -299,51 +353,8 @@
         }
 
         setInterval(() => {
-            const currentDayKey = updateHeaderDate();
-            if (currentDayKey !== lastFetchedDateStr) {
-                initLocationAndWeather();
-            } else {
-                initLocationAndWeather();
-            }
-        }, 30 * 60 * 1000);
-
-        setInterval(() => {
-            const currentDayKey = updateHeaderDate();
-            if (currentDayKey !== lastFetchedDateStr) {
-                initLocationAndWeather();
-            }
+            if (updateHeaderDate() !== lastFetchedDateStr) initLocationAndWeather();
         }, 60 * 1000);
-
-        let documents = [];
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            documents = saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            documents = [];
-        }
-
-        if (documents.length === 0) {
-            documents = [
-                {
-                    id: 1001,
-                    title: '토토로 숲 쉼터 정비 요청 건',
-                    content: '숲속 쉼터 나무 벤치 보수 및 주변 조명 교체를 요청드립니다.',
-                    author: '정면',
-                    opinion: '빠른 검토 부탁드립니다.',
-                    draftDate: new Date().toLocaleString(),
-                    step: 'waiting',
-                    currentApproverIndex: 0,
-                    history: [
-                        { approver: '정면', action: '기안 상신', opinion: '빠른 검토 부탁드립니다.', time: new Date().toLocaleString() }
-                    ]
-                }
-            ];
-            saveDocs();
-        }
-
-        function saveDocs() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
-        }
 
         function toggleSidebar(open) {
             const drawer = document.getElementById('sidebar-drawer');
@@ -403,18 +414,19 @@
                 ]
             };
 
-            documents.unshift(newDoc);
-            saveDocs();
-            this.reset();
-            switchTab('waiting');
+            const docsRef = window.dbRef(window.database, 'ghibli_docs');
+            const newDocRef = window.dbPush(docsRef);
+            window.dbSet(newDocRef, newDoc).then(() => {
+                this.reset();
+                switchTab('waiting');
+            }).catch(err => alert('상신 실패: ' + err.message));
         });
 
-        function deleteDocument(id, event) {
+        function deleteDocument(firebaseKey, event) {
             event.stopPropagation();
             if (confirm('이 문서를 영구 삭제하시겠습니까?')) {
-                documents = documents.filter(d => d.id !== id);
-                saveDocs();
-                renderLists();
+                const docRef = window.dbRef(window.database, `ghibli_docs/${firebaseKey}`);
+                window.dbRemove(docRef).catch(err => alert('삭제 실패: ' + err.message));
             }
         }
 
@@ -434,14 +446,13 @@
             });
 
             documents.forEach(doc => {
-                // 최종승인 또는 반려함일 때만 삭제 버튼 표시
                 const canDelete = (doc.step === 'approved' || doc.step === 'rejected');
                 const deleteBtnHtml = canDelete
-                    ? `<button type="button" onclick="deleteDocument(${doc.id}, event)" class="ml-2 px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[10px] font-bold">삭제</button>`
+                    ? `<button type="button" onclick="deleteDocument('${doc.firebaseKey}', event)" class="ml-2 px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[10px] font-bold">삭제</button>`
                     : '';
 
                 const cardHtml = `
-                    <div onclick="openModal(${doc.id})" class="bg-white/95 border border-emerald-100 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer space-y-1">
+                    <div onclick="openModal('${doc.firebaseKey}')" class="bg-white/95 border border-emerald-100 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer space-y-1">
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-sm text-gray-800 truncate">${doc.title}</span>
                             <div class="flex items-center shrink-0">
@@ -507,9 +518,10 @@
             if (doc.step === 'rejected') return '반려종료';
         }
 
-        function openModal(id) {
-            const doc = documents.find(d => d.id === id);
+        function openModal(firebaseKey, isSilent = false) {
+            const doc = documents.find(d => d.firebaseKey === firebaseKey);
             if (!doc) return;
+            currentOpenDocId = firebaseKey;
 
             document.getElementById('modal-title').innerText = doc.title;
             document.getElementById('modal-author').innerText = doc.author;
@@ -520,19 +532,19 @@
 
             const historyEl = document.getElementById('modal-comment-history');
             historyEl.innerHTML = '';
-            doc.history.forEach(h => {
-                historyEl.innerHTML += `
-                    <div class="bg-gray-100 p-2 rounded-xl text-[11px] space-y-0.5">
-                        <div class="flex justify-between font-bold text-gray-700">
-                            <span>${h.approver} (${h.action})</span>
-                            <span class="text-[10px] text-gray-400">${h.time}</span>
+            if (doc.history) {
+                doc.history.forEach(h => {
+                    historyEl.innerHTML += `
+                        <div class="bg-gray-100 p-2 rounded-xl text-[11px] space-y-0.5">
+                            <div class="flex justify-between font-bold text-gray-700">
+                                <span>${h.approver} (${h.action})</span>
+                                <span class="text-[10px] text-gray-400">${h.time}</span>
+                            </div>
+                            <p class="text-gray-600">${h.opinion}</p>
                         </div>
-                        <p class="text-gray-600">${h.opinion}</p>
-                    </div>
-                `;
-            });
-
-            document.getElementById('modal-new-reply').value = '';
+                    `;
+                });
+            }
 
             const actionBtns = document.getElementById('modal-action-buttons');
             actionBtns.innerHTML = '';
@@ -540,63 +552,73 @@
             if (doc.step === 'waiting' || doc.step === 'progress') {
                 const currentName = doc.step === 'waiting' ? '가오나시 본부장' : '토토로 유경';
                 actionBtns.innerHTML = `
-                    <button type="button" onclick="processApproval(${doc.id}, 'reject')" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs shadow">반려</button>
-                    <button type="button" onclick="processApproval(${doc.id}, 'approve')" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-xl text-xs shadow">승인 (${currentName})</button>
+                    <button type="button" onclick="processApproval('${doc.firebaseKey}', 'reject')" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs shadow">반려</button>
+                    <button type="button" onclick="processApproval('${doc.firebaseKey}', 'approve')" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-xl text-xs shadow">승인 (${currentName})</button>
                 `;
             } else {
                 actionBtns.innerHTML = `<div class="w-full text-center text-xs text-gray-400 py-1">결재가 종결된 문서입니다.</div>`;
             }
 
-            document.getElementById('detail-modal').classList.remove('hidden');
+            if (!isSilent) {
+                document.getElementById('detail-modal').classList.remove('hidden');
+            }
         }
 
         function closeModal() {
+            currentOpenDocId = null;
             document.getElementById('detail-modal').classList.add('hidden');
         }
 
-        function processApproval(id, actionType) {
-            const doc = documents.find(d => d.id === id);
+        function processApproval(firebaseKey, actionType) {
+            const doc = documents.find(d => d.firebaseKey === firebaseKey);
             if (!doc) return;
 
             const replyText = document.getElementById('modal-new-reply').value.trim();
             const currentActor = doc.step === 'waiting' ? '가오나시 본부장' : '토토로 유경';
             const nowStr = new Date().toLocaleString();
 
+            let nextStep = doc.step;
+            let newHistoryItem = {};
+
             if (actionType === 'reject') {
-                doc.step = 'rejected';
-                doc.history.push({
+                nextStep = 'rejected';
+                newHistoryItem = {
                     approver: currentActor,
                     action: '반려',
                     opinion: replyText || '반려 처리되었습니다.',
                     time: nowStr
-                });
+                };
             } else {
                 if (doc.step === 'waiting') {
-                    doc.step = 'progress';
-                    doc.currentApproverIndex = 1;
-                    doc.history.push({
+                    nextStep = 'progress';
+                    newHistoryItem = {
                         approver: '가오나시 본부장',
                         action: '1차 승인 완료',
                         opinion: replyText || '승인합니다.',
                         time: nowStr
-                    });
+                    };
                 } else if (doc.step === 'progress') {
-                    doc.step = 'approved';
-                    doc.history.push({
+                    nextStep = 'approved';
+                    newHistoryItem = {
                         approver: '토토로 유경',
                         action: '최종 승인 완료',
                         opinion: replyText || '최종 승인합니다.',
                         time: nowStr
-                    });
+                    };
                 }
             }
 
-            saveDocs();
-            closeModal();
-            renderLists();
+            const updatedHistory = doc.history ? [...doc.history, newHistoryItem] : [newHistoryItem];
+
+            const docRef = window.dbRef(window.database, `ghibli_docs/${firebaseKey}`);
+            window.dbUpdate(docRef, {
+                step: nextStep,
+                history: updatedHistory
+            }).then(() => {
+                closeModal();
+            }).catch(err => alert('처리 실패: ' + err.message));
         }
 
-        renderLists();
         initLocationAndWeather();
     </script>
 </body>
